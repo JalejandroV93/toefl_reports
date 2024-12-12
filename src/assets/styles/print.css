@@ -1,0 +1,45 @@
+/* styles/print.css */
+@media print {
+    /* Reset body margins and background */
+    body {
+      margin: 0;
+      padding: 0;
+      background: white;
+    }
+  
+    /* Hide elementos innecesarios para impresión */
+    .print-hidden {
+      display: none !important;
+    }
+  
+    /* Ajustes para el contenido principal */
+    .print\:w-full {
+      width: 100% !important;
+      max-width: none !important;
+    }
+  
+    /* Asegurar que los colores y fondos se impriman correctamente */
+    * {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  
+    /* Evitar cortes de página en medio de elementos importantes */
+    .card, 
+    .section, 
+    table {
+      break-inside: avoid;
+    }
+  
+    /* Asegurar que los enlaces muestren sus URLs */
+    a[href]:after {
+      content: " (" attr(href) ")";
+    }
+  
+    /* Ocultar botones de descarga/impresión */
+    button[class*="print-hidden"],
+    .download-button,
+    .print-button {
+      display: none !important;
+    }
+  }
