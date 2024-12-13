@@ -1,3 +1,5 @@
+'use client';
+
 import { ChartData } from '@/types';
 import { BarChart2 } from 'lucide-react';
 import React from 'react';

@@ -1,4 +1,5 @@
 // hooks/useGeminiRecommendations.tsx
+'use client';
 import { useState, useEffect } from 'react';
 import { StudentData } from '@/types';
 import { GoogleGenerativeAI } from '@google/generative-ai';
