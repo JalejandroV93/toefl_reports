@@ -10,11 +10,13 @@ import SkillsRadar from "./SkillsRadar";
 import SkillAnalysis from "./SkillAnalysis";
 import ActionPlan from "./ActionPlan";
 import { useGeminiRecommendations } from "@/hooks/useGeminiRecommendations";
-//import { Skeleton } from "@/components/ui/skeleton";
 import Loader from "../ui/loader";
+
 interface IndividualReportProps {
   studentData: StudentData;
 }
+
+const SKILLS = ["READING", "LISTENING", "SPEAKING", "WRITING"] as const;
 
 const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
   const { recommendations, isLoading } = useGeminiRecommendations(studentData);
@@ -26,9 +28,7 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
     );
   };
 
-  const skills = ["READING", "LISTENING", "SPEAKING", "WRITING"] as const;
-
-  const radarData = skills.map((skill) => ({
+  const radarData = SKILLS.map((skill) => ({
     subject: skill,
     score: studentData[skill],
     fullMark: 100,
@@ -37,6 +37,10 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
   if (isLoading) {
     return <Loader />;
   }
+
+  const getFeedbackKey = (skill: typeof SKILLS[number]) => {
+    return `FEEDBACK ${skill}` as keyof StudentData;
+  };
 
   return (
     <Card className="w-full">
@@ -59,14 +63,14 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
 
       <CardContent className="space-y-8">
         {/* Skills Overview */}
-        <section>
-          <h3 className="text-lg font-semibold mb-4">Skills Overview</h3>
+        <section className="bg-white rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">Skills Overview</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
+            <div className="bg-gray-50/50 p-4 rounded-lg">
               <SkillsRadar data={radarData} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              {skills.map((skill) => (
+              {SKILLS.map((skill) => (
                 <SkillScoreCard
                   key={skill}
                   skill={skill}
@@ -78,19 +82,15 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
         </section>
 
         {/* Detailed Analysis */}
-        <section>
-          <h3 className="text-lg font-semibold mb-4">Detailed Analysis</h3>
+        <section className="bg-white rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">Detailed Analysis</h3>
           <div className="space-y-6">
-            {["SPEAKING", "WRITING"].map((skill) => (
+            {SKILLS.map((skill) => (
               <SkillAnalysis
                 key={skill}
                 skill={skill}
-                score={studentData[skill as keyof StudentData] as number}
-                feedback={
-                  studentData[
-                    `FEEDBACK ${skill}` as keyof StudentData
-                  ] as string
-                }
+                score={studentData[skill]}
+                feedback={studentData[getFeedbackKey(skill)]?.toString()}
                 recommendations={recommendations[skill]}
               />
             ))}
@@ -98,8 +98,8 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
         </section>
 
         {/* Action Plan */}
-        <section>
-          <h3 className="text-lg font-semibold mb-4">Action Plan</h3>
+        <section className="bg-white rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">Action Plan</h3>
           <ActionPlan studentData={studentData} />
         </section>
       </CardContent>

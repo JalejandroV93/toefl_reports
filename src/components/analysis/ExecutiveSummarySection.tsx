@@ -1,7 +1,7 @@
+import React from 'react';
 import { ChartData } from '@/types';
 import { getLevelForScore } from '@/utils/reportUtils';
 import { Presentation } from 'lucide-react';
-import React from 'react';
 
 interface ExecutiveSummaryProps {
   studentsCount: number;
@@ -13,7 +13,7 @@ interface ExecutiveSummaryProps {
 const ExecutiveSummarySection: React.FC<ExecutiveSummaryProps> = ({
   studentsCount,
   distributionData,
-  highestPerformanceSkill,
+  highestPerformanceSkill
 }) => {
   const overallData = distributionData.find(item => item.skill === "Overall");
   
