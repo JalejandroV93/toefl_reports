@@ -64,7 +64,7 @@ export const useGeminiResources = (studentData: StudentData) => {
         }
 
         const genAI = new GoogleGenerativeAI(API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
         const prompt = `
           As an expert in English language learning and academic preparation, analyze this student's performance and provide detailed, personalized resource recommendations.

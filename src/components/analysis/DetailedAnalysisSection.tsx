@@ -1,106 +1,128 @@
-import { ChartData } from '@/types';
-import { ClipboardList } from 'lucide-react';
 import React from 'react';
+import { ChartData } from '@/types';
+import { BookOpenCheck, Headphones, MessageSquare, BookOpen } from "lucide-react";
+import { useGeminiSkillAnalysis } from '@/hooks/useGeminiSkillAnalysis';
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DetailedAnalysisSectionProps {
   distributionData: ChartData[];
 }
 
+const SkillSkeleton = () => (
+  <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+    <div className="flex items-center gap-2">
+      <Skeleton className="h-5 w-5 rounded-full" />
+      <Skeleton className="h-6 w-32" />
+    </div>
+    <div className="space-y-2">
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-3/4" />
+      <Skeleton className="h-4 w-5/6" />
+    </div>
+  </div>
+);
+
 const DetailedAnalysisSection: React.FC<DetailedAnalysisSectionProps> = ({ 
   distributionData 
 }) => {
+  const { analysis, isLoading, error } = useGeminiSkillAnalysis(distributionData);
+  
+  // Filter out the "Overall" entry and only process individual skills
   const skillsData = distributionData.filter(data => data.skill !== 'Overall');
 
-  const getSkillAnalysis = (skill: string): { strengths: string[], improvements: string[] } => {
-    const analysis = {
+  const getSkillConfig = (skill: string) => {
+    const configs = {
       Reading: {
-        strengths: [
-          'Strong comprehension of academic texts',
-          'Good analysis of complex materials',
-        ],
-        improvements: [
-          'Focus on reading speed and efficiency',
-          'Practice with technical vocabulary',
-        ],
+        icon: <BookOpen className="h-5 w-5 text-blue-600" />,
+        bgColor: 'bg-blue-50',
+        borderColor: 'border-blue-200'
       },
       Listening: {
-        strengths: [
-          'Good understanding of lectures',
-          'Ability to follow complex discussions',
-        ],
-        improvements: [
-          'Work on note-taking strategies',
-          'Practice with different accents',
-        ],
+        icon: <Headphones className="h-5 w-5 text-green-600" />,
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200'
       },
       Speaking: {
-        strengths: [
-          'Clear pronunciation and delivery',
-          'Good response organization',
-        ],
-        improvements: [
-          'Improve speaking fluency',
-          'Practice with academic vocabulary',
-        ],
+        icon: <MessageSquare className="h-5 w-5 text-purple-600" />,
+        bgColor: 'bg-purple-50',
+        borderColor: 'border-purple-200'
       },
       Writing: {
-        strengths: [
-          'Good essay structure',
-          'Clear argument development',
-        ],
-        improvements: [
-          'Enhance vocabulary usage',
-          'Work on grammar accuracy',
-        ],
-      },
+        icon: <BookOpenCheck className="h-5 w-5 text-rose-600" />,
+        bgColor: 'bg-rose-50',
+        borderColor: 'border-rose-200'
+      }
     };
 
-    return analysis[skill as keyof typeof analysis] || {
-      strengths: [],
-      improvements: [],
-    };
+    return configs[skill as keyof typeof configs] || configs.Reading;
   };
 
-  return (
-    <section>
-      <div className="flex items-center gap-2 mb-4">
-        <ClipboardList className="h-6 w-6 text-purple-600" />
+  if (isLoading) {
+    return (
+      <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Detailed Analysis</h2>
-      </div>
-      <div className="space-y-4">
-        {skillsData.map((skill) => {
-          const analysis = getSkillAnalysis(skill.skill);
-          const averageScore = skill.average || 0;
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <SkillSkeleton />
+          <SkillSkeleton />
+          <SkillSkeleton />
+          <SkillSkeleton />
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-2xl font-semibold">Detailed Analysis</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {skillsData.map((skillData) => {
+          const skillAnalysis = analysis[skillData.skill];
+          const config = getSkillConfig(skillData.skill);
+          const averageScore = skillData.average || 0;
 
           return (
-            <div key={skill.skill} className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-medium text-lg mb-2">{skill.skill}</h3>
-              <div className="grid grid-cols-2 gap-4">
+            <div 
+              key={skillData.skill} 
+              className={`${config.bgColor} border ${config.borderColor} rounded-lg p-4`}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                {config.icon}
+                <h3 className="font-medium text-lg">{skillData.skill}</h3>
+              </div>
+              
+              <div className="space-y-3">
                 <div>
-                  <p className="mb-2">Average Score: {averageScore.toFixed(1)}</p>
-                  <p>Distribution:</p>
-                  <ul className="list-disc ml-4 mt-1">
-                    <li>C1: {skill.C1} students</li>
-                    <li>B2: {skill.B2} students</li>
-                    <li>B1: {skill.B1} students</li>
-                    <li>A2: {skill.A2} students</li>
-                    <li>Below A2: {skill.Below} students</li>
-                  </ul>
+                  <p className="font-medium">Performance Overview</p>
+                  <p className="text-sm">Average Score: {averageScore.toFixed(1)}</p>
+                  <div className="grid grid-cols-3 gap-2 mt-2 text-sm">
+                    <div>
+                      <p className="text-green-700">C1: {skillData.C1}</p>
+                      <p className="text-blue-700">B2: {skillData.B2}</p>
+                    </div>
+                    <div>
+                      <p className="text-yellow-700">B1: {skillData.B1}</p>
+                      <p className="text-orange-700">A2: {skillData.A2}</p>
+                    </div>
+                    <div>
+                      <p className="text-red-700">Below: {skillData.Below}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="mb-4">
-                    <p className="font-medium text-green-700">Strengths:</p>
-                    <ul className="list-disc ml-4">
-                      {analysis.strengths.map((strength, index) => (
-                        <li key={index}>{strength}</li>
+
+                <div className="space-y-2">
+                  <div>
+                    <p className="font-medium text-green-700">Key Strengths:</p>
+                    <ul className="list-disc ml-4 text-sm">
+                      {skillAnalysis?.strengths.map((strength, idx) => (
+                        <li key={idx}>{strength}</li>
                       ))}
                     </ul>
                   </div>
                   <div>
                     <p className="font-medium text-red-700">Areas for Improvement:</p>
-                    <ul className="list-disc ml-4">
-                      {analysis.improvements.map((improvement, index) => (
-                        <li key={index}>{improvement}</li>
+                    <ul className="list-disc ml-4 text-sm">
+                      {skillAnalysis?.improvements.map((improvement, idx) => (
+                        <li key={idx}>{improvement}</li>
                       ))}
                     </ul>
                   </div>
@@ -110,6 +132,12 @@ const DetailedAnalysisSection: React.FC<DetailedAnalysisSectionProps> = ({
           );
         })}
       </div>
+
+      {error && (
+        <p className="text-sm text-red-600 mt-2">
+          Note: Using default analysis due to error in generating custom analysis.
+        </p>
+      )}
     </section>
   );
 };
