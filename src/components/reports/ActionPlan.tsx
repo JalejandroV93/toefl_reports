@@ -1,180 +1,178 @@
-
-import React, { useMemo } from 'react';
+import React from 'react';
 import { StudentData } from '@/types';
-import { getLevelForScore } from '@/utils/reportUtils';
-import { Shield, Target, BookOpen, MessageSquare } from 'lucide-react';
+import { Shield, Target, BookOpen, MessageSquare, BookOpenCheck, Headphones } from 'lucide-react';
+import { useGeminiRecommendations } from '@/hooks/useGeminiRecommendations';
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ActionPlanProps {
   studentData: StudentData;
-  recommendations: { [key: string]: string[] };
 }
 
-// Separar la lógica de negocio en un custom hook
-const useActionPlanData = (studentData: StudentData, recommendations: { [key: string]: string[] }) => {
-  return useMemo(() => {
-    const skills = ['READING', 'LISTENING', 'SPEAKING', 'WRITING'] as const;
+const SkillSection: React.FC<{
+  skill: string;
+  icon: React.ReactNode;
+  data: {
+    strengths: string[];
+    weaknesses: string[];
+    shortTermActions: string[];
+    longTermStrategy: string[];
+    resources: string[];
+  };
+  bgColor: string;
+  textColor: string;
+  borderColor: string;
+}> = ({ skill, icon, data, bgColor, textColor, borderColor }) => (
+  <div className={`p-4 ${bgColor} rounded-lg`}>
+    <div className={`flex items-center gap-2 pb-2 border-b ${borderColor}`}>
+      {icon}
+      <h4 className={`text-lg font-semibold ${textColor}`}>{skill}</h4>
+    </div>
     
-    // Encontrar la habilidad más baja
-    const lowestSkill = skills.reduce((lowest, current) => {
-      const currentScore = studentData[current];
-      const lowestScore = studentData[lowest];
-      return (currentScore < lowestScore) ? current : lowest;
-    });
+    {/* Strengths */}
+    <div className="mt-3">
+      <h5 className="font-medium mb-1">Strengths</h5>
+      <ul className="list-disc pl-5 space-y-1">
+        {data.strengths.map((item, idx) => (
+          <li key={idx} className={textColor}>{item}</li>
+        ))}
+      </ul>
+    </div>
 
-    // Generar metas basadas en los datos y recomendaciones
-    const generateGoals = () => {
-      const goals = [];
-      
-      // Agregar meta para la habilidad más baja
-      goals.push(`Improve ${lowestSkill.toLowerCase()} score (currently at ${studentData[lowestSkill]})`);
-      
-      // Agregar recomendaciones específicas si existen
-      if (recommendations['SPEAKING']?.length) {
-        goals.push(...recommendations['SPEAKING'].slice(0, 2));
-      }
-      if (recommendations['WRITING']?.length) {
-        goals.push(...recommendations['WRITING'].slice(0, 2));
-      }
+    {/* Areas for Improvement */}
+    <div className="mt-3">
+      <h5 className="font-medium mb-1">Areas for Improvement</h5>
+      <ul className="list-disc pl-5 space-y-1">
+        {data.weaknesses.map((item, idx) => (
+          <li key={idx} className={textColor}>{item}</li>
+        ))}
+      </ul>
+    </div>
 
-      // Asegurar que siempre haya al menos una meta
-      if (goals.length === 0) {
-        goals.push(`Focus on improving overall TOEFL performance`);
-      }
+    {/* Actions */}
+    <div className="mt-3">
+      <h5 className="font-medium mb-1">Recommended Actions</h5>
+      <ul className="list-disc pl-5 space-y-1">
+        {data.shortTermActions.map((action, idx) => (
+          <li key={idx} className={textColor}>{action}</li>
+        ))}
+      </ul>
+    </div>
+  </div>
+);
 
-      return goals;
-    };
+const SkillSkeleton = () => (
+  <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+    <Skeleton className="h-6 w-32" />
+    <div className="space-y-2">
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-3/4" />
+      <Skeleton className="h-4 w-5/6" />
+    </div>
+  </div>
+);
 
-    // Generar actividades de práctica basadas en el nivel
-    const generatePracticeActivities = (skill: string) => {
-      const level = getLevelForScore(studentData[skill as keyof StudentData] as number);
-      
-      const defaultActivities = [
-        'Regular practice with structured materials',
-        'Work with language tutors',
-        'Use online learning resources'
-      ];
+const ActionPlan: React.FC<ActionPlanProps> = ({ studentData }) => {
+  const { recommendations, isLoading, error } = useGeminiRecommendations(studentData);
 
-      const skillSpecificActivities = {
-        SPEAKING: {
-          B1: [
-            'Daily conversation practice',
-            'Record and analyze speech',
-            'Join speaking clubs'
-          ],
-          B2: [
-            'Academic discussions',
-            'Presentation practice',
-            'Debate techniques'
-          ],
-          C1: [
-            'Advanced presentations',
-            'Public speaking practice',
-            'Academic seminars'
-          ]
-        },
-        WRITING: {
-          B1: [
-            'Daily journal writing',
-            'Basic essay practice',
-            'Grammar exercises'
-          ],
-          B2: [
-            'Academic essays',
-            'Research writing',
-            'Advanced grammar'
-          ],
-          C1: [
-            'Research papers',
-            'Academic publications',
-            'Complex arguments'
-          ]
-        }
-      };
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <SkillSkeleton />
+          <SkillSkeleton />
+          <SkillSkeleton />
+          <SkillSkeleton />
+        </div>
+      </div>
+    );
+  }
 
-      return skillSpecificActivities[skill as keyof typeof skillSpecificActivities]?.[level as keyof (typeof skillSpecificActivities)['SPEAKING']] 
-        || defaultActivities;
-    };
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+        Error loading recommendations. Using default recommendations.
+      </div>
+    );
+  }
 
-    // Generar recursos recomendados
-    const generateResources = () => [
-      'TOEFL Official Materials',
-      'Academic Word Lists',
-      'Practice Tests',
-      'Language Exchange Partners',
-      'Speaking and Writing Tools'
-    ];
-
-    return {
-      goals: generateGoals(),
-      speakingActivities: generatePracticeActivities('SPEAKING'),
-      writingActivities: generatePracticeActivities('WRITING'),
-      resources: generateResources()
-    };
-  }, [studentData, recommendations]);
-};
-
-const ActionPlan: React.FC<ActionPlanProps> = ({ studentData, recommendations }) => {
-  const { goals, speakingActivities, writingActivities, resources } = useActionPlanData(studentData, recommendations);
+  const skillConfigs = {
+    READING: {
+      icon: <BookOpenCheck className="h-5 w-5 text-emerald-600" />,
+      bgColor: "bg-emerald-50",
+      textColor: "text-emerald-700",
+      borderColor: "border-emerald-200"
+    },
+    LISTENING: {
+      icon: <Headphones className="h-5 w-5 text-blue-600" />,
+      bgColor: "bg-blue-50",
+      textColor: "text-blue-700",
+      borderColor: "border-blue-200"
+    },
+    SPEAKING: {
+      icon: <MessageSquare className="h-5 w-5 text-purple-600" />,
+      bgColor: "bg-purple-50",
+      textColor: "text-purple-700",
+      borderColor: "border-purple-200"
+    },
+    WRITING: {
+      icon: <BookOpen className="h-5 w-5 text-rose-600" />,
+      bgColor: "bg-rose-50",
+      textColor: "text-rose-700",
+      borderColor: "border-rose-200"
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Short-term Goals */}
-      <div className="p-4 bg-blue-50 rounded-lg">
-        <div className="flex items-center gap-2 mb-3">
-          <Target className="h-5 w-5 text-blue-600" />
-          <h3 className="text-xl font-semibold text-blue-800">Short-term Goals</h3>
-        </div>
-        <ul className="list-disc pl-5 space-y-2">
-          {goals.map((goal, index) => (
-            <li key={index} className="text-blue-700">{goal}</li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Practice Activities */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Speaking Practice */}
-        <div className="p-4 bg-green-50 rounded-lg">
-          <div className="flex items-center gap-2 pb-2 border-b border-green-200">
-            <MessageSquare className="h-5 w-5 text-green-600" />
-            <h4 className="text-lg font-semibold text-green-800">
-              Speaking Practice
-            </h4>
-          </div>
-          <ul className="list-disc pl-5 space-y-2 mt-2">
-            {speakingActivities.map((practice, index) => (
-              <li key={index} className="text-green-700">{practice}</li>
-            ))}
-          </ul>
-        </div>
+        {Object.entries(recommendations).map(([skill, data]) => (
+          <SkillSection
+            key={skill}
+            skill={skill}
+            data={data}
+            {...skillConfigs[skill as keyof typeof skillConfigs]}
+          />
+        ))}
+      </div>
 
-        {/* Writing Practice */}
-        <div className="p-4 bg-purple-50 rounded-lg">
-          <div className="flex items-center gap-2 pb-2 border-b border-purple-200">
-            <BookOpen className="h-5 w-5 text-purple-600" />
-            <h4 className="text-lg font-semibold text-purple-800">
-              Writing Practice
-            </h4>
-          </div>
-          <ul className="list-disc pl-5 space-y-2 mt-2">
-            {writingActivities.map((practice, index) => (
-              <li key={index} className="text-purple-700">{practice}</li>
-            ))}
-          </ul>
+      {/* Long-term Strategy Section */}
+      <div className="p-4 bg-indigo-50 rounded-lg">
+        <div className="flex items-center gap-2 mb-3">
+          <Target className="h-5 w-5 text-indigo-600" />
+          <h4 className="text-lg font-semibold text-indigo-800">Long-term Strategy</h4>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Object.entries(recommendations).map(([skill, data]) => (
+            <div key={skill}>
+              <h5 className="font-medium text-indigo-800 mb-2">{skill}</h5>
+              <ul className="list-disc pl-5 space-y-1">
+                {data.longTermStrategy.map((strategy, idx) => (
+                  <li key={idx} className="text-indigo-700">{strategy}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Recommended Resources */}
+      {/* Resources Section */}
       <div className="p-4 bg-sky-50 rounded-lg">
         <div className="flex items-center gap-2 mb-3">
           <Shield className="h-5 w-5 text-sky-600" />
           <h4 className="text-lg font-semibold text-sky-800">Recommended Resources</h4>
         </div>
-        <ul className="list-disc pl-5 space-y-2">
-          {resources.map((resource, index) => (
-            <li key={index} className="text-sky-700">{resource}</li>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Object.entries(recommendations).map(([skill, data]) => (
+            <div key={skill}>
+              <h5 className="font-medium text-sky-800 mb-2">{skill}</h5>
+              <ul className="list-disc pl-5 space-y-1">
+                {data.resources.map((resource, idx) => (
+                  <li key={idx} className="text-sky-700">{resource}</li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   );

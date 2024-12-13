@@ -1,8 +1,8 @@
-// components/reports/RecommendationsSection.tsx
-import React from 'react';
-import { ChartData } from '@/types';
-import { useGeminiGeneralRecommendations } from '@/hooks/useGeminiGeneralRecommendations';
 import { Skeleton } from "@/components/ui/skeleton";
+import { useGeminiGeneralRecommendations } from '@/hooks/useGeminiGeneralRecommendations';
+import { ChartData } from '@/types';
+import { LightbulbIcon } from 'lucide-react';
+import React from 'react';
 
 interface RecommendationsSectionProps {
   distributionData: ChartData[];
@@ -16,7 +16,10 @@ const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-semibold mb-4">General Recommendations</h2>
+        <div className="flex items-center gap-2 mb-4">
+          <LightbulbIcon className="h-6 w-6 text-yellow-600" />
+          <h2 className="text-2xl font-semibold">General Recommendations</h2>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Skeleton className="h-48" />
           <Skeleton className="h-48" />
@@ -27,7 +30,10 @@ const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
 
   return (
     <section>
-      <h2 className="text-2xl font-semibold mb-4">General Recommendations</h2>
+      <div className="flex items-center gap-2 mb-4">
+        <LightbulbIcon className="h-6 w-6 text-yellow-600" />
+        <h2 className="text-2xl font-semibold">General Recommendations</h2>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Short-term Actions */}
         <div className="bg-blue-50 p-4 rounded-lg">

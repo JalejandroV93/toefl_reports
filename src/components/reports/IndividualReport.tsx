@@ -1,16 +1,17 @@
 // components/reports/IndividualReport.tsx
-import React from 'react';
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from 'lucide-react';
-import { StudentData } from '@/types';
-import { generateIndividualReportPDF } from '@/utils/individualPdfGenerator';
-import SkillScoreCard from './SkillScoreCard';
-import SkillsRadar from './SkillsRadar';
-import SkillAnalysis from './SkillAnalysis';
-import ActionPlan from './ActionPlan';
-import { useGeminiRecommendations } from '@/hooks/useGeminiRecommendations';
-import Loader from '../ui/loader';
+import { Download } from "lucide-react";
+import { StudentData } from "@/types";
+import { generateIndividualReportPDF } from "@/utils/individualPdfGenerator";
+import SkillScoreCard from "./SkillScoreCard";
+import SkillsRadar from "./SkillsRadar";
+import SkillAnalysis from "./SkillAnalysis";
+import ActionPlan from "./ActionPlan";
+import { useGeminiRecommendations } from "@/hooks/useGeminiRecommendations";
+//import { Skeleton } from "@/components/ui/skeleton";
+import Loader from "../ui/loader";
 interface IndividualReportProps {
   studentData: StudentData;
 }
@@ -20,24 +21,21 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
 
   const handleDownloadPDF = async () => {
     const doc = generateIndividualReportPDF(studentData, recommendations);
-    doc.save(`${studentData.Nombre}_${studentData["Apellido(s)"]}_TOEFL_Report.pdf`);
+    doc.save(
+      `${studentData.Nombre}_${studentData["Apellido(s)"]}_TOEFL_Report.pdf`
+    );
   };
 
-  const skills = ['READING', 'LISTENING', 'SPEAKING', 'WRITING'] as const;
-  
-  const radarData = skills.map(skill => ({
+  const skills = ["READING", "LISTENING", "SPEAKING", "WRITING"] as const;
+
+  const radarData = skills.map((skill) => ({
     subject: skill,
     score: studentData[skill],
-    fullMark: 100
+    fullMark: 100,
   }));
 
   if (isLoading) {
-    return (
-      <div className='flex items-center justify-center flex-col'>
-      <Loader />
-      <span>Generando Recomendaciones</span>
-      </div>
-      );
+    return <Loader />;
   }
 
   return (
@@ -47,9 +45,7 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
           <CardTitle className="text-2xl font-bold">
             {studentData.Nombre} {studentData["Apellido(s)"]}
           </CardTitle>
-          <p className="text-sm text-gray-500 mt-1">
-            TOEFL Assessment Report
-          </p>
+          <p className="text-sm text-gray-500 mt-1">TOEFL Assessment Report</p>
         </div>
         <Button
           onClick={handleDownloadPDF}
@@ -85,12 +81,16 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
         <section>
           <h3 className="text-lg font-semibold mb-4">Detailed Analysis</h3>
           <div className="space-y-6">
-            {['SPEAKING', 'WRITING'].map((skill) => (
+            {["SPEAKING", "WRITING"].map((skill) => (
               <SkillAnalysis
                 key={skill}
                 skill={skill}
                 score={studentData[skill as keyof StudentData] as number}
-                feedback={studentData[`FEEDBACK ${skill}` as keyof StudentData] as string}
+                feedback={
+                  studentData[
+                    `FEEDBACK ${skill}` as keyof StudentData
+                  ] as string
+                }
                 recommendations={recommendations[skill]}
               />
             ))}
@@ -100,10 +100,7 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
         {/* Action Plan */}
         <section>
           <h3 className="text-lg font-semibold mb-4">Action Plan</h3>
-          <ActionPlan
-            studentData={studentData}
-            recommendations={recommendations}
-          />
+          <ActionPlan studentData={studentData} />
         </section>
       </CardContent>
     </Card>

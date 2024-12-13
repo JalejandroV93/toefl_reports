@@ -1,5 +1,6 @@
-import React from 'react';
 import { ChartData } from '@/types';
+import { ClipboardList } from 'lucide-react';
+import React from 'react';
 
 interface DetailedAnalysisSectionProps {
   distributionData: ChartData[];
@@ -8,7 +9,6 @@ interface DetailedAnalysisSectionProps {
 const DetailedAnalysisSection: React.FC<DetailedAnalysisSectionProps> = ({ 
   distributionData 
 }) => {
-  // Filter out the "Overall" entry and only process individual skills
   const skillsData = distributionData.filter(data => data.skill !== 'Overall');
 
   const getSkillAnalysis = (skill: string): { strengths: string[], improvements: string[] } => {
@@ -63,7 +63,10 @@ const DetailedAnalysisSection: React.FC<DetailedAnalysisSectionProps> = ({
 
   return (
     <section>
-      <h2 className="text-2xl font-semibold mb-4">Detailed Analysis</h2>
+      <div className="flex items-center gap-2 mb-4">
+        <ClipboardList className="h-6 w-6 text-purple-600" />
+        <h2 className="text-2xl font-semibold">Detailed Analysis</h2>
+      </div>
       <div className="space-y-4">
         {skillsData.map((skill) => {
           const analysis = getSkillAnalysis(skill.skill);

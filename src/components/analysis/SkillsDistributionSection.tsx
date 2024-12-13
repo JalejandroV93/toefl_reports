@@ -1,6 +1,7 @@
+import { ChartData } from '@/types';
+import { BarChart2 } from 'lucide-react';
 import React from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { ChartData } from '@/types';
 
 interface SkillsDistributionSectionProps {
   distributionData: ChartData[];
@@ -9,7 +10,10 @@ interface SkillsDistributionSectionProps {
 const SkillsDistributionSection: React.FC<SkillsDistributionSectionProps> = ({ distributionData }) => {
   return (
     <section>
-      <h2 className="text-2xl font-semibold mb-4">Skills Distribution</h2>
+      <div className="flex items-center gap-2 mb-4">
+        <BarChart2 className="h-6 w-6 text-green-600" />
+        <h2 className="text-2xl font-semibold">Skills Distribution</h2>
+      </div>
       <div className="h-96">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={distributionData}>
