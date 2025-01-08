@@ -1,56 +1,45 @@
 // app/api/reports/route.ts
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { nanoid } from 'nanoid';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    // Add CORS headers if needed
     const headers = {
       'Content-Type': 'application/json',
     };
 
-    // Parse request body
     let body;
     try {
       body = await request.json();
     } catch {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid JSON in request body' 
-        },
+        { success: false, error: 'Invalid JSON in request body' },
         { status: 400, headers }
       );
     }
 
     const { group, studentsData, recommendations, distribution } = body;
 
-    // Validate required fields
+    // Validación mejorada
     if (!group || !studentsData || !Array.isArray(studentsData) || studentsData.length === 0) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid request data: Missing required fields' 
-        },
+        { success: false, error: 'Invalid request data: Missing required fields' },
         { status: 400, headers }
       );
     }
 
-    // Validate student data
+    // Validar datos del estudiante
     for (const student of studentsData) {
-      if (!student.Nombre || !student['Apellido(s)']) {
+      if (!student.name || !student.lastName) {
         return NextResponse.json(
-          { 
-            success: false, 
-            error: 'Invalid student data: Missing name or lastname' 
-          },
+          { success: false, error: 'Student data validation failed: Each student must have name and lastName' },
           { status: 400, headers }
         );
       }
     }
 
-    // Create report in database
+    // Crear reporte
     const report = await prisma.report.create({
       data: {
         group,
@@ -59,16 +48,16 @@ export async function POST(request: Request) {
         distribution: JSON.stringify(distribution || []),
         students: {
           create: studentsData.map(student => ({
-            name: student.Nombre,
-            lastName: student['Apellido(s)'],
-            reading: Number(student.READING) || 0,
-            listening: Number(student.LISTENING) || 0,
-            speaking: Number(student.SPEAKING) || 0,
-            writing: Number(student.WRITING) || 0,
-            speakingFeedback: student['FEEDBACK SPEAKING']?.toString() || '',
-            writingFeedback: student['FEEDBACK WRITING']?.toString() || '',
+            name: student.name,
+            lastName: student.lastName,
+            reading: Number(student.reading) || 0,
+            listening: Number(student.listening) || 0,
+            speaking: Number(student.speaking) || 0,
+            writing: Number(student.writing) || 0,
+            speakingFeedback: student.speakingFeedback || '',
+            writingFeedback: student.writingFeedback || '',
             shareToken: nanoid(10),
-            recommendations: JSON.stringify({})
+            recommendations: student.recommendations || '{}'
           }))
         }
       },
@@ -77,17 +66,9 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(
-      { 
-        success: true, 
-        data: report 
-      },
-      { headers }
-    );
-
+    return NextResponse.json({ success: true, data: report }, { headers });
   } catch (error) {
     console.error('Error in POST /api/reports:', error);
-    
     return NextResponse.json(
       { 
         success: false, 

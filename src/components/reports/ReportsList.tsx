@@ -12,6 +12,8 @@ import {
   Calendar,
   ChevronDown,
   AlertCircle,
+  FileDown,
+  Download,
 } from "lucide-react";
 import {
   Collapsible,
@@ -28,7 +30,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DeleteReportDialog } from "./DeleteReportDialog";
-
+import { generateLinksCSV, downloadCSV } from "@/utils/exportUtils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import Loader from "../ui/loader";
 interface Report {
   id: string;
   createdAt: Date;
@@ -79,12 +88,18 @@ export function ReportsList() {
     return `${baseUrl}/shared/${type}/${token}`;
   };
 
+  const handleExportAllLinks = () => {
+    const csv = generateLinksCSV(reports);
+    downloadCSV(csv, "all_toefl_report_links.csv");
+  };
+
+  const handleExportGroupLinks = (groupReport: Report) => {
+    const csv = generateLinksCSV([groupReport]);
+    downloadCSV(csv, `toefl_report_links_${groupReport.group}.csv`);
+  };
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-      </div>
-    );
+    return <Loader />;
   }
 
   if (error) {
@@ -105,6 +120,37 @@ export function ReportsList() {
   }
   return (
     <div className="space-y-4">
+      <div className="mb-4 flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              disabled={reports.length === 0}
+            >
+              <FileDown className="h-4 w-4" />
+              Export Links
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExportAllLinks}>
+              Export All Groups
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-muted-foreground" disabled>
+              Export by Group:
+            </DropdownMenuItem>
+            {reports.map((report) => (
+              <DropdownMenuItem
+                key={report.id}
+                onClick={() => handleExportGroupLinks(report)}
+              >
+                Group: {report.group}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {reports.map((report) => (
         <Card key={report.id}>
           <CardContent className="pt-6">
@@ -114,7 +160,7 @@ export function ReportsList() {
                   <FileBarChart className="h-5 w-5 text-blue-600" />
                   <div>
                     <h3 className="text-lg font-semibold">
-                      Group {report.group}
+                      Group: {report.group}
                     </h3>
                     <div className="flex items-center text-sm text-gray-500">
                       <Calendar className="h-4 w-4 mr-1" />
@@ -149,6 +195,15 @@ export function ReportsList() {
                       </div>
                     </DialogContent>
                   </Dialog>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleExportGroupLinks(report)}
+                    title="Export group links"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
 
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm">
@@ -204,10 +259,12 @@ export function ReportsList() {
                     ))}
                   </div>
                 </div>
-                <DeleteReportDialog
-                  reportId={report.id}
-                  onDelete={() => handleDeleteReport(report.id)}
-                />
+                <div className="flex items-center justify-end mt-2">
+                  <DeleteReportDialog
+                    reportId={report.id}
+                    onDelete={() => handleDeleteReport(report.id)}
+                  />
+                </div>
               </CollapsibleContent>
             </Collapsible>
           </CardContent>

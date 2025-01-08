@@ -96,8 +96,11 @@ class ReportService {
   async getReportByToken(token: string): Promise<Report | null> {
     try {
       const response = await fetch(`${this.API_BASE_URL}/shared/report/${token}`);
+      
       if (response.status === 404) return null;
-      return await this.handleResponse<Report>(response);
+      
+      const result = await this.handleResponse<Report>(response);
+      return result;
     } catch (error) {
       console.error('Error in getReportByToken:', error);
       throw new Error('Failed to fetch report');
@@ -129,13 +132,17 @@ class ReportService {
     try {
       const response = await fetch(`${this.API_BASE_URL}/reports/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete report');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete report');
       }
-      
-      await this.handleResponse(response);
+
+      await response.json();
     } catch (error) {
       console.error('Error deleting report:', error);
       throw error;

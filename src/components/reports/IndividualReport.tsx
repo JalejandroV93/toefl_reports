@@ -1,5 +1,5 @@
 // components/reports/IndividualReport.tsx
-'use client';
+"use client";
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import Loader from "../ui/loader";
 
 interface IndividualReportProps {
   studentData: StudentData;
+  recommendations?: Record<string, string[]>;
 }
 
 const SKILLS = ["READING", "LISTENING", "SPEAKING", "WRITING"] as const;
@@ -40,7 +41,7 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
     return <Loader />;
   }
 
-  const getFeedbackKey = (skill: typeof SKILLS[number]) => {
+  const getFeedbackKey = (skill: (typeof SKILLS)[number]) => {
     return `FEEDBACK ${skill}` as keyof StudentData;
   };
 
@@ -66,7 +67,9 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
       <CardContent className="space-y-8">
         {/* Skills Overview */}
         <section className="bg-white rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">Skills Overview</h3>
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+            Skills Overview
+          </h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-gray-50/50 p-4 rounded-lg">
               <SkillsRadar data={radarData} />
@@ -85,7 +88,9 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
 
         {/* Detailed Analysis */}
         <section className="bg-white rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">Detailed Analysis</h3>
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+            Detailed Analysis
+          </h3>
           <div className="space-y-6">
             {SKILLS.map((skill) => (
               <SkillAnalysis
@@ -101,7 +106,9 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
 
         {/* Action Plan */}
         <section className="bg-white rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">Action Plan</h3>
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+            Action Plan
+          </h3>
           <ActionPlan studentData={studentData} />
         </section>
       </CardContent>

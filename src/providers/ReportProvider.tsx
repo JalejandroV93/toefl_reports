@@ -1,17 +1,14 @@
-// providers/ReportProvider.tsx
 'use client';
 
 import React, { createContext, useContext, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { StudentData } from '@/types';
 import { reportService } from '@/services/reportService';
 import { useToast } from "@/hooks/use-toast";
-import { calculateLevelDistribution } from '@/utils/reportUtils';
 
 interface ReportContextType {
   studentsData: StudentData[];
   setStudentsData: (data: StudentData[]) => void;
-  handleDataLoaded: (data: StudentData[], group: string) => Promise<void>;
+  handleDataLoaded: (data: StudentData[], group: string) => Promise<string>;
   loading: boolean;
 }
 
@@ -24,13 +21,11 @@ export function ReportProvider({
 }) {
   const [studentsData, setStudentsData] = useState<StudentData[]>([]);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const { toast } = useToast();
 
-  const handleDataLoaded = async (data: StudentData[], group: string) => {
+  const handleDataLoaded = async (data: StudentData[], group: string): Promise<string> => {
     setLoading(true);
     try {
-      // Validate data
       if (!data || data.length === 0) {
         throw new Error('No student data provided');
       }
@@ -41,38 +36,20 @@ export function ReportProvider({
 
       setStudentsData(data);
       
-      // Calculate distribution data
-      const distributionData = calculateLevelDistribution(data);
-
-      // Initial recommendations
-      const initialRecommendations = {
-        shortTermActions: [
-          "Review core skills",
-          "Implement regular assessments",
-          "Provide additional support"
-        ],
-        longTermStrategy: [
-          "Develop curriculum alignment",
-          "Create learning pathways",
-          "Establish improvement framework"
-        ]
-      };
-      
       const result = await reportService.createReport({
         group,
         studentsData: data,
-        recommendations: initialRecommendations,
-        distribution: distributionData
       });
 
       console.log('Report created:', result);
 
       toast({
         title: "Success",
-        description: `Report for group ${group} has been saved.`,
+        description: `Report for group ${group} has been generated successfully.`,
       });
+      // Return the share URL for the report
+      return `/shared/report/${(result as { shareToken: string }).shareToken}`;
 
-      router.push('/reports');
     } catch (error) {
       console.error('Error saving report:', error);
       toast({
@@ -80,6 +57,7 @@ export function ReportProvider({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to generate report",
       });
+      throw error;
     } finally {
       setLoading(false);
     }

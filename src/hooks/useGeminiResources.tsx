@@ -1,8 +1,8 @@
-// hooks/useGeminiResources.tsx
-import { useState, useEffect } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { StudentData } from '@/types';
 import { getLevelForScore } from '@/utils/skillAnalysisUtils';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+// hooks/useGeminiResources.tsx
+import { useEffect, useState } from 'react';
 
 export interface ResourceCategory {
   category: string;
@@ -76,8 +76,9 @@ export const useGeminiResources = (studentData: StudentData) => {
           1. Current level and areas needing improvement in each skill
           2. Specific feedback provided for speaking and writing
           3. Modern learning tools and platforms available in 2024
-          4. Mix of free and premium resources
+          4. Mix of free and premium resources but prioritize free resources
           5. Both test preparation and general academic English development
+          6. Include maximum 3 resources per category and minimum 1 resource per category
 
           Provide recommendations in this exact JSON format:
           {

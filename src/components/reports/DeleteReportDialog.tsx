@@ -55,8 +55,8 @@ export function DeleteReportDialog({ onDelete }: DeleteReportDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="destructive" size="sm">
-          <Trash2 className="h-4 w-4" />
+        <Button variant="destructive" size="lg">
+          <Trash2 className="h-10 w-10" /><p>Eliminar Reportes</p>
         </Button>
       </DialogTrigger>
       <DialogContent>

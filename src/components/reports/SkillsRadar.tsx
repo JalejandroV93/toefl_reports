@@ -1,12 +1,13 @@
-import React from 'react';
+import React from "react";
 import {
-  RadarChart,
-  PolarGrid,
   PolarAngleAxis,
+  PolarGrid,
   PolarRadiusAxis,
   Radar,
-  ResponsiveContainer
-} from 'recharts';
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 
 interface SkillsRadarProps {
   data: {
@@ -20,10 +21,14 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({ data }) => {
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={data}>
-          <PolarGrid />
-          <PolarAngleAxis dataKey="subject" />
-          <PolarRadiusAxis angle={30} domain={[0, 100]} />
+        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
+          <PolarGrid gridType="polygon" />
+          <PolarAngleAxis dataKey="subject" tick={{ fill: "#4B5563" }} />
+          <PolarRadiusAxis angle={90} domain={[0, 100]} tickCount={6} />
+          <Tooltip
+            formatter={(value: number) => [`${value}/100`, "Score"]}
+            contentStyle={{ backgroundColor: "white", borderRadius: "8px" }}
+          />
           <Radar
             name="Skills"
             dataKey="score"

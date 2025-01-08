@@ -7,7 +7,8 @@ export async function GET(
   { params }: { params: { type: string; token: string } }
 ) {
   try {
-    const { type, token } = params;
+    const { type, token } = await params;
+    console.log("Getting shared api report by token:", token);
 
     if (type === 'report') {
       const report = await prisma.report.findUnique({
