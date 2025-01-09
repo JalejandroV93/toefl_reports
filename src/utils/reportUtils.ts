@@ -1,104 +1,24 @@
+import { ChartData, Level, StudentData } from "@/types";
+import {
+  getLevelForScore,
+  getTotalLevel,
+  TOTAL_SCORE_LEVELS,
+} from "@/utils/scoreConversion";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { StudentData, ChartData, SkillLevelMapping, Level } from "@/types";
 import _ from "lodash";
+import { getSkillAnalysis } from "@/utils/skillAnalysisUtils";
+type SkillKey = "Reading" | "Listening" | "Speaking" | "Writing" | "Overall";
 
-// export const SKILLS = ['READING', 'LISTENING', 'SPEAKING', 'WRITING'] as const;
-
-// export const getLevelForScore = (score: number): Level => {
-//   if (score >= 80) return "C1";
-//   if (score >= 60) return "B2";
-//   if (score >= 40) return "B1";
-//   if (score >= 0) return "A2";
-//   return "Below";
-// };
-
-// export const calculateLevelDistribution = (studentsData: StudentData[]): ChartData[] => {
-//   const initialDistribution: SkillLevelMapping = {
-//     Reading: { C1: 0, B2: 0, B1: 0, A2: 0, Below: 0, total: 0, average: 0 },
-//     Listening: { C1: 0, B2: 0, B1: 0, A2: 0, Below: 0, total: 0, average: 0 },
-//     Speaking: { C1: 0, B2: 0, B1: 0, A2: 0, Below: 0, total: 0, average: 0 },
-//     Writing: { C1: 0, B2: 0, B1: 0, A2: 0, Below: 0, total: 0, average: 0 },
-//     Overall: { C1: 0, B2: 0, B1: 0, A2: 0, Below: 0, total: 0, average: 0 }
-//   };
-
-//   const distribution = studentsData.reduce((acc, student) => {
-//     let totalScore = 0;
-//     let skillsCount = 0;
-
-//     SKILLS.forEach((skill) => {
-//       const score = student[skill as keyof StudentData];
-//       if (typeof score === 'number' && !isNaN(score)) {
-//         const level = getLevelForScore(score);
-//         const skillKey = skill.toLowerCase();
-//         acc[skillKey].total++;
-//         acc[skillKey].average += score;
-//         acc[skillKey][level]++;
-
-//         totalScore += score;
-//         skillsCount++;
-//       }
-//     });
-
-//     if (skillsCount > 0) {
-//       const overallAverage = totalScore / skillsCount;
-//       const overallLevel = getLevelForScore(overallAverage);
-//       acc.Overall[overallLevel]++;
-//       acc.Overall.total++;
-//       acc.Overall.average += overallAverage;
-//     }
-
-//     return acc;
-//   }, _.cloneDeep(initialDistribution));
-
-//   // Calculate final averages and convert to ChartData format
-//   return Object.entries(distribution).map(([skill, levels]) => ({
-//     skill,
-//     C1: levels.C1,
-//     B2: levels.B2,
-//     B1: levels.B1,
-//     A2: levels.A2,
-//     Below: levels.Below,
-//     average: levels.total > 0 ? Number((levels.average / levels.total).toFixed(2)) : 0
-//   }));
-// };
-
-// export const getSkillAnalysis = (skillName: string, score: number): string => {
-//   const level = getLevelForScore(score);
-//   const analyses = {
-//     READING: {
-//       C1: "Excelente comprensión lectora. Puede manejar textos académicos complejos.",
-//       B2: "Buena comprensión de textos avanzados. Algunas dificultades con vocabulario técnico.",
-//       B1: "Comprensión básica de textos generales. Necesita mejorar velocidad y vocabulario.",
-//       A2: "Comprensión limitada. Requiere desarrollo de estrategias de lectura.",
-//       Below: "Necesita apoyo intensivo en comprensión lectora."
-//     },
-//     LISTENING: {
-//       C1: "Excelente comprensión auditiva en diversos contextos.",
-//       B2: "Buena comprensión en la mayoría de situaciones.",
-//       B1: "Comprensión moderada. Dificultades con acentos y velocidad.",
-//       A2: "Comprensión básica. Necesita exposición a más material auditivo.",
-//       Below: "Requiere práctica intensiva en comprensión auditiva."
-//     },
-//     SPEAKING: {
-//       C1: "Comunicación fluida y natural en diversos contextos.",
-//       B2: "Buena fluidez con algunos errores menores.",
-//       B1: "Comunicación básica efectiva. Necesita mejorar fluidez.",
-//       A2: "Comunicación limitada. Requiere más práctica oral.",
-//       Below: "Necesita desarrollo intensivo de habilidades orales."
-//     },
-//     WRITING: {
-//       C1: "Excelente expresión escrita en diversos géneros.",
-//       B2: "Buena capacidad de escritura con estructura clara.",
-//       B1: "Escritura básica efectiva. Necesita mejorar organización.",
-//       A2: "Escritura limitada. Requiere desarrollo de estructura.",
-//       Below: "Necesita apoyo intensivo en expresión escrita."
-//     }
-//   };
-
-//   return analyses[skillName as keyof typeof analyses]?.[level as keyof typeof analyses.READING] ||
-//          "Análisis no disponible";
-// };
+interface SkillDistribution {
+  skill: string;
+  C2?: number;
+  C1?: number;
+  B2?: number;
+  B1?: number;
+  A2?: number;
+  average?: number;
+}
 
 export const generateStudentPDF = async (studentData: StudentData) => {
   const doc = new jsPDF();
@@ -111,18 +31,29 @@ export const generateStudentPDF = async (studentData: StudentData) => {
     20
   );
 
+  // Add Overall Level
+  const overallLevel = calculateStudentOverallLevel(studentData);
+  const totalScore =
+    Number(studentData.READING || 0) +
+    Number(studentData.LISTENING || 0) +
+    Number(studentData.SPEAKING || 0) +
+    Number(studentData.WRITING || 0);
+
+  doc.setFontSize(14);
+  doc.text(`Nivel General: ${overallLevel} (${totalScore}/120)`, 20, 30);
+
   // Skills scores
   doc.setFontSize(12);
-  let yPos = 40;
+  let yPos = 45; // Ajustado para dar espacio al Overall Level
 
   SKILLS.forEach((skill) => {
     const score = studentData[skill as keyof StudentData];
     if (typeof score === "number") {
-      const level = getLevelForScore(score);
+      const level = getLevelForScore(score, skill);
       const analysis = getSkillAnalysis(skill, score);
 
       doc.text(`${skill}:`, 20, yPos);
-      doc.text(`${score}/100 - Nivel ${level}`, 70, yPos);
+      doc.text(`${score}/30 - Nivel ${level}`, 70, yPos);
       yPos += 7;
       doc.setFontSize(10);
       const lines = doc.splitTextToSize(analysis, 170);
@@ -175,17 +106,17 @@ export const generateGeneralPDF = async (studentsData: StudentData[]) => {
   const distributionData = calculateLevelDistribution(studentsData);
   const tableData = distributionData.map((row) => [
     row.skill,
+    row.C2,
     row.C1,
     row.B2,
     row.B1,
     row.A2,
-    row.Below,
     row.average?.toFixed(2) || "0",
   ]);
 
   autoTable(doc, {
     startY: yPos,
-    head: [["Habilidad", "C1", "B2", "B1", "A2", "Below", "Promedio"]],
+    head: [["Habilidad", "C2", "C1", "B2", "B1", "A2", "Promedio"]],
     body: tableData,
   });
 
@@ -264,45 +195,81 @@ const generateGeneralRecommendations = (
 export const calculateStudentOverallLevel = (
   studentData: StudentData
 ): Level => {
-  let totalScore = 0;
-  let scoreCount = 0;
+  // Calculamos el total sumando los puntajes de cada skill
+  const scores = {
+    READING: Number(studentData.READING) || 0,
+    LISTENING: Number(studentData.LISTENING) || 0,
+    SPEAKING: Number(studentData.SPEAKING) || 0,
+    WRITING: Number(studentData.WRITING) || 0,
+  };
 
-  SKILLS.forEach((skill) => {
-    const score = studentData[skill as keyof StudentData];
-    if (typeof score === "number" && !isNaN(score)) {
-      totalScore += score;
-      scoreCount++;
+  const totalScore = Object.values(scores).reduce(
+    (sum, score) => sum + score,
+    0
+  );
+
+  // Usamos los rangos definidos en TOTAL_SCORE_LEVELS
+  for (const levelRange of TOTAL_SCORE_LEVELS) {
+    if (totalScore >= levelRange.min && totalScore <= levelRange.max) {
+      return levelRange.level as Level;
     }
-  });
+  }
 
-  const averageScore = scoreCount > 0 ? totalScore / scoreCount : 0;
-  return getLevelForScore(averageScore);
+  return "A2"; // Nivel por defecto si no coincide con ningún rango
 };
-
-// // utils/reportUtils.ts
-// import { StudentData, ChartData, SkillLevelMapping, Level } from "@/types";
-// import _ from "lodash";
 
 export const SKILLS = ["READING", "LISTENING", "SPEAKING", "WRITING"] as const;
-
-export const getLevelForScore = (score: number): Level => {
-  if (score >= 80) return "C1";
-  if (score >= 60) return "B2";
-  if (score >= 40) return "B1";
-  if (score >= 0) return "A2";
-  return "Below";
-};
 
 export const calculateLevelDistribution = (
   studentsData: StudentData[]
 ): ChartData[] => {
   // Initialize distribution object with proper structure
-  const initialDistribution: SkillLevelMapping = {
-    Reading: { C1: 0, B2: 0, B1: 0, A2: 0, Below: 0, total: 0, average: 0 },
-    Listening: { C1: 0, B2: 0, B1: 0, A2: 0, Below: 0, total: 0, average: 0 },
-    Speaking: { C1: 0, B2: 0, B1: 0, A2: 0, Below: 0, total: 0, average: 0 },
-    Writing: { C1: 0, B2: 0, B1: 0, A2: 0, Below: 0, total: 0, average: 0 },
-    Overall: { C1: 0, B2: 0, B1: 0, A2: 0, Below: 0, total: 0, average: 0 },
+  const initialDistribution = {
+    Reading: {
+      C2: 0,
+      C1: 0,
+      B2: 0,
+      B1: 0,
+      A2: 0,
+      total: 0,
+      average: 0,
+    },
+    Listening: {
+      C2: 0,
+      C1: 0,
+      B2: 0,
+      B1: 0,
+      A2: 0,
+      total: 0,
+      average: 0,
+    },
+    Speaking: {
+      C2: 0,
+      C1: 0,
+      B2: 0,
+      B1: 0,
+      A2: 0,
+      total: 0,
+      average: 0,
+    },
+    Writing: {
+      C2: 0,
+      C1: 0,
+      B2: 0,
+      B1: 0,
+      A2: 0,
+      total: 0,
+      average: 0,
+    },
+    Overall: {
+      C2: 0,
+      C1: 0,
+      B2: 0,
+      B1: 0,
+      A2: 0,
+      total: 0,
+      average: 0,
+    },
   };
 
   // Calculate distributions
@@ -316,8 +283,9 @@ export const calculateLevelDistribution = (
 
       // Only process valid numeric scores
       if (!isNaN(score)) {
-        const level = getLevelForScore(score);
-        const skillKey = skill.charAt(0) + skill.slice(1).toLowerCase();
+        const level = getLevelForScore(score, skill);
+        const skillKey = (skill.charAt(0) +
+          skill.slice(1).toLowerCase()) as SkillKey;
 
         // Update skill-specific statistics
         if (acc[skillKey]) {
@@ -335,7 +303,7 @@ export const calculateLevelDistribution = (
     // Calculate and update overall statistics
     if (validSkillsCount > 0) {
       const overallAverage = totalScore / validSkillsCount;
-      const overallLevel = getLevelForScore(overallAverage);
+      const overallLevel = getTotalLevel(overallAverage);
 
       acc.Overall.total++;
       acc.Overall.average += overallAverage;
@@ -348,11 +316,11 @@ export const calculateLevelDistribution = (
   // Convert to ChartData format and calculate final averages
   return Object.entries(distribution).map(([skill, levels]) => ({
     skill,
+    C2: levels.C2,
     C1: levels.C1,
     B2: levels.B2,
     B1: levels.B1,
     A2: levels.A2,
-    Below: levels.Below,
     average:
       levels.total > 0
         ? parseFloat((levels.average / levels.total).toFixed(2))
@@ -360,43 +328,48 @@ export const calculateLevelDistribution = (
   }));
 };
 
-export const getSkillAnalysis = (skillName: string, score: number): string => {
-  const level = getLevelForScore(score);
+export const calculateSkillAverage = (
+  skill: SkillDistribution,
+  studentsCount: number
+): number => {
+  const skillTotal =
+    (skill.C2 || 0) * 95 + // C2 = 95 points
+    (skill.C1 || 0) * 85 + // C1 = 85 points
+    (skill.B2 || 0) * 75 + // B2 = 75 points
+    (skill.B1 || 0) * 65 + // B1 = 65 points
+    (skill.A2 || 0) * 55; // A2 = 55 points
 
-  const analyses = {
-    READING: {
-      C1: "Excelente comprensión lectora. Puede manejar textos académicos complejos.",
-      B2: "Buena comprensión de textos avanzados. Algunas dificultades con vocabulario técnico.",
-      B1: "Comprensión básica de textos generales. Necesita mejorar velocidad y vocabulario.",
-      A2: "Comprensión limitada. Requiere desarrollo de estrategias de lectura.",
-      Below: "Necesita apoyo intensivo en comprensión lectora.",
-    },
-    LISTENING: {
-      C1: "Excelente comprensión auditiva en diversos contextos.",
-      B2: "Buena comprensión en la mayoría de situaciones.",
-      B1: "Comprensión moderada. Dificultades con acentos y velocidad.",
-      A2: "Comprensión básica. Necesita exposición a más material auditivo.",
-      Below: "Requiere práctica intensiva en comprensión auditiva.",
-    },
-    SPEAKING: {
-      C1: "Comunicación fluida y natural en diversos contextos.",
-      B2: "Buena fluidez con algunos errores menores.",
-      B1: "Comunicación básica efectiva. Necesita mejorar fluidez.",
-      A2: "Comunicación limitada. Requiere más práctica oral.",
-      Below: "Necesita desarrollo intensivo de habilidades orales.",
-    },
-    WRITING: {
-      C1: "Excelente expresión escrita en diversos géneros.",
-      B2: "Buena capacidad de escritura con estructura clara.",
-      B1: "Escritura básica efectiva. Necesita mejorar organización.",
-      A2: "Escritura limitada. Requiere desarrollo de estructura.",
-      Below: "Necesita apoyo intensivo en expresión escrita.",
-    },
-  };
+  return skillTotal / studentsCount;
+};
 
+export const calculateOverallAverage = (
+  distributionData: SkillDistribution[],
+  studentsCount: number
+): number => {
   return (
-    analyses[skillName as keyof typeof analyses]?.[
-      level as keyof typeof analyses.READING
-    ] || "Análisis no disponible"
+    distributionData
+      .filter((item) => item.skill !== "Overall")
+      .reduce(
+        (sum, skill) => sum + calculateSkillAverage(skill, studentsCount),
+        0
+      ) /
+    (distributionData.length - 1)
   );
+};
+
+export const analyzeSkillPerformance = (
+  skill: SkillDistribution,
+  studentsCount: number
+) => {
+  return {
+    skill: skill.skill,
+    average: skill.average || 0,
+    highLevelCount: (skill.C2 || 0) + (skill.C1 || 0) + (skill.B2 || 0),
+    lowLevelCount: (skill.B1 || 0) + (skill.A2 || 0),
+    performanceScore:
+      ((skill.C2 || 0) * 5 + (skill.C1 || 0) * 4 + (skill.B2 || 0) * 3) /
+      studentsCount,
+    needsImprovement:
+      (((skill.B1 || 0) + (skill.A2 || 0)) / studentsCount) * 100,
+  };
 };

@@ -13,6 +13,11 @@ import SkillAnalysis from "./SkillAnalysis";
 import ActionPlan from "./ActionPlan";
 import { useGeminiRecommendations } from "@/hooks/useGeminiRecommendations";
 import Loader from "../ui/loader";
+import {
+  calculateTotalScore,
+  getTotalLevel,
+} from "@/utils/scoreConversion";
+import { Badge } from "@/components/ui/badge";
 
 interface IndividualReportProps {
   studentData: StudentData;
@@ -37,6 +42,9 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
     fullMark: 100,
   }));
 
+  const totalScore = calculateTotalScore(studentData);
+  const totalLevel = getTotalLevel(totalScore);
+
   if (isLoading) {
     return <Loader />;
   }
@@ -44,6 +52,8 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
   const getFeedbackKey = (skill: (typeof SKILLS)[number]) => {
     return `FEEDBACK ${skill}` as keyof StudentData;
   };
+
+
 
   return (
     <Card className="w-full">
@@ -67,9 +77,20 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
       <CardContent className="space-y-8">
         {/* Skills Overview */}
         <section className="bg-white rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
-            Skills Overview
-          </h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Skills Overview
+            </h3>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Total Score:</span>
+              <span className="font-bold text-xl text-blue-600">
+                {totalScore}/120
+              </span>
+              <Badge variant="outline" className="ml-2">
+                Level {totalLevel}
+              </Badge>
+            </div>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-gray-50/50 p-4 rounded-lg">
               <SkillsRadar data={radarData} />

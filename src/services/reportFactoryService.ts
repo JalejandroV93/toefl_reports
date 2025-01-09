@@ -1,13 +1,13 @@
 // services/reportFactoryService.ts
-import { StudentData, ChartData } from '@/types';
+import { StudentData, ChartData } from "@/types";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { calculateLevelDistribution } from '@/utils/reportUtils';
-import { getLevelForScore } from '@/utils/skillAnalysisUtils';
-import { Subject } from 'rxjs';
-import { GeminiRateLimiter, geminiRateLimiter } from './geminiRateLimiter';
+import { calculateLevelDistribution } from "@/utils/reportUtils";
+import { getLevelForScore } from "@/utils/scoreConversion";
+import { Subject } from "rxjs";
+import { GeminiRateLimiter, geminiRateLimiter } from "./geminiRateLimiter";
 
 export interface GenerationProgress {
-  stage: 'general' | 'individual' | 'analysis';
+  stage: "general" | "individual" | "analysis";
   current: number;
   total: number;
   estimatedWaitTime: number;
@@ -21,7 +21,7 @@ export class ReportFactoryService {
   constructor() {
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error('Gemini API key not found');
+      throw new Error("Gemini API key not found");
     }
     this.API_KEY = apiKey;
     this.rateLimiter = geminiRateLimiter;
@@ -32,7 +32,7 @@ export class ReportFactoryService {
   }
 
   private async generateWithRateLimiter<T>(
-    stage: GenerationProgress['stage'],
+    stage: GenerationProgress["stage"],
     current: number,
     total: number,
     generator: () => Promise<T>
@@ -42,24 +42,25 @@ export class ReportFactoryService {
       stage,
       current,
       total,
-      estimatedWaitTime: waitTime
+      estimatedWaitTime: waitTime,
     });
 
     return await this.rateLimiter.enqueue(generator);
   }
 
   private async generateGeneralRecommendations(distributionData: ChartData[]) {
-    return this.generateWithRateLimiter(
-      'general',
-      1,
-      1,
-      async () => {
-        const genAI = new GoogleGenerativeAI(this.API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    return this.generateWithRateLimiter("general", 1, 1, async () => {
+      const genAI = new GoogleGenerativeAI(this.API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-        const prompt = `
+      const prompt = `
           Analyze this TOEFL skills distribution data and generate recommendations:
           ${JSON.stringify(distributionData)}
+
+          Dataset Details:
+          - distributionData includes TOEFL skills mapped to CEFR levels (C2, C1, B2, B1, A2).
+          - Each skill (e.g., READING, LISTENING, etc.) has a distribution of levels and an optional average.
+          - Use the data to identify weak areas and prioritize recommendations accordingly.
 
           Generate a JSON response with exactly this structure:
           {
@@ -76,18 +77,29 @@ export class ReportFactoryService {
               "aim for overall skill integration and advancement"
             ]
           }
+
+          Guidelines:
+          1. Base all recommendations on the provided distribution data.
+          2. Identify the weakest skill(s) by analyzing the levels (e.g., focus on skills with more A2 or B1 levels).
+          3. For short-term actions:
+            - Target the weakest areas.
+            - Focus on actionable, high-impact changes that can yield quick results.
+          4. For long-term strategy:
+            - Consider trends across all skills, not just the weakest ones.
+            - Aim for systematic and sustainable improvement in skill integration.
+          5. Ensure all recommendations are TOEFL-specific and relevant to the skill levels provided.
+
         `;
 
-        try {
-          const result = await model.generateContent(prompt);
-          const text = result.response.text();
-          return JSON.parse(text.replace(/```json\n|\n```/g, "").trim());
-        } catch (error) {
-          console.error('Error generating general recommendations:', error);
-          return this.getDefaultGeneralRecommendations();
-        }
+      try {
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        return JSON.parse(text.replace(/```json\n|\n```/g, "").trim());
+      } catch (error) {
+        console.error("Error generating general recommendations:", error);
+        return this.getDefaultGeneralRecommendations();
       }
-    );
+    });
   }
 
   private async generateIndividualRecommendations(
@@ -96,37 +108,44 @@ export class ReportFactoryService {
     total: number
   ) {
     return this.generateWithRateLimiter(
-      'individual',
+      "individual",
       index + 1,
       total,
       async () => {
         const genAI = new GoogleGenerativeAI(this.API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-        
+        const model = genAI.getGenerativeModel({
+          model: "gemini-2.0-flash-exp",
+        });
+
         const skillsData = {
           READING: {
             score: studentData.READING,
-            level: getLevelForScore(studentData.READING)
+            level: getLevelForScore(studentData.READING, "READING"),
           },
           LISTENING: {
             score: studentData.LISTENING,
-            level: getLevelForScore(studentData.LISTENING)
+            level: getLevelForScore(studentData.LISTENING, "LISTENING"),
           },
           SPEAKING: {
             score: studentData.SPEAKING,
-            level: getLevelForScore(studentData.SPEAKING),
-            feedback: studentData['FEEDBACK SPEAKING']
+            level: getLevelForScore(studentData.SPEAKING, "SPEAKING"),
+            feedback: studentData["FEEDBACK SPEAKING"],
           },
           WRITING: {
             score: studentData.WRITING,
-            level: getLevelForScore(studentData.WRITING),
-            feedback: studentData['FEEDBACK WRITING']
-          }
+            level: getLevelForScore(studentData.WRITING, "WRITING"),
+            feedback: studentData["FEEDBACK WRITING"],
+          },
         };
 
         const prompt = `
           Analyze this TOEFL student's performance and generate recommendations.
           Student Data: ${JSON.stringify(skillsData, null, 2)}
+          
+          Student Data contains:
+          - Section scores (READING, LISTENING, SPEAKING, WRITING)
+          - Overall proficiency level
+          - Feedback for SPEAKING and WRITING (if available)
 
           For each skill provide recommendations in JSON format:
           {
@@ -147,7 +166,7 @@ export class ReportFactoryService {
           const text = result.response.text();
           return JSON.parse(text.replace(/```json\n|\n```/g, "").trim());
         } catch (error) {
-          console.error('Error generating individual recommendations:', error);
+          console.error("Error generating individual recommendations:", error);
           return this.getDefaultIndividualRecommendations();
         }
       }
@@ -155,17 +174,18 @@ export class ReportFactoryService {
   }
 
   private async generateSkillAnalysis(distributionData: ChartData[]) {
-    return this.generateWithRateLimiter(
-      'analysis',
-      1,
-      1,
-      async () => {
-        const genAI = new GoogleGenerativeAI(this.API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    return this.generateWithRateLimiter("analysis", 1, 1, async () => {
+      const genAI = new GoogleGenerativeAI(this.API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-        const prompt = `
+      const prompt = `
           Analyze this TOEFL skills distribution data:
           ${JSON.stringify(distributionData)}
+
+          Dataset Details:
+          - distributionData includes TOEFL skills mapped to CEFR levels (C2, C1, B2, B1, A2).
+          - Each skill (e.g., READING, LISTENING, etc.) has a distribution of levels and an optional average.
+          - Use the data to identify weak areas and prioritize recommendations accordingly.
 
           Generate a JSON response with this structure:
           {
@@ -181,16 +201,15 @@ export class ReportFactoryService {
           }
         `;
 
-        try {
-          const result = await model.generateContent(prompt);
-          const text = result.response.text();
-          return JSON.parse(text.replace(/```json\n|\n```/g, "").trim());
-        } catch (error) {
-          console.error('Error generating skill analysis:', error);
-          return this.getDefaultSkillAnalysis();
-        }
+      try {
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        return JSON.parse(text.replace(/```json\n|\n```/g, "").trim());
+      } catch (error) {
+        console.error("Error generating skill analysis:", error);
+        return this.getDefaultSkillAnalysis();
       }
-    );
+    });
   }
 
   private getDefaultGeneralRecommendations() {
@@ -199,53 +218,53 @@ export class ReportFactoryService {
         "Implement intensive practice sessions for core skills",
         "Develop structured assessment program",
         "Create focused study groups for each skill level",
-        "Provide targeted resources for identified weak areas"
+        "Provide targeted resources for identified weak areas",
       ],
       longTermStrategy: [
         "Establish comprehensive progress monitoring system",
         "Develop curriculum alignment with TOEFL requirements",
         "Create personalized learning pathways",
-        "Implement integrated skills approach across all levels"
-      ]
+        "Implement integrated skills approach across all levels",
+      ],
     };
   }
 
   private getDefaultIndividualRecommendations() {
     const defaultSkill = {
-      strengths: ['Basic understanding established'],
-      weaknesses: ['Needs consistent practice'],
+      strengths: ["Basic understanding established"],
+      weaknesses: ["Needs consistent practice"],
       shortTermActions: [
-        'Practice with TOEFL materials daily',
-        'Work on core skills',
-        'Use study resources regularly'
+        "Practice with TOEFL materials daily",
+        "Work on core skills",
+        "Use study resources regularly",
       ],
       longTermStrategy: [
-        'Develop consistent study routine',
-        'Track progress systematically',
-        'Seek regular feedback on improvements'
-      ]
+        "Develop consistent study routine",
+        "Track progress systematically",
+        "Seek regular feedback on improvements",
+      ],
     };
 
     return {
       READING: { ...defaultSkill },
       LISTENING: { ...defaultSkill },
       SPEAKING: { ...defaultSkill },
-      WRITING: { ...defaultSkill }
+      WRITING: { ...defaultSkill },
     };
   }
 
   private getDefaultSkillAnalysis() {
     const defaultAnalysis = {
       strengths: [
-        'Students show consistent participation',
-        'Basic understanding established',
-        'Foundation for improvement present'
+        "Students show consistent participation",
+        "Basic understanding established",
+        "Foundation for improvement present",
       ],
       improvements: [
-        'Need for more structured practice',
-        'Focus on advanced skill development',
-        'Strengthen core competencies'
-      ]
+        "Need for more structured practice",
+        "Focus on advanced skill development",
+        "Strengthen core competencies",
+      ],
     };
 
     return {
@@ -253,18 +272,18 @@ export class ReportFactoryService {
         Reading: { ...defaultAnalysis },
         Listening: { ...defaultAnalysis },
         Speaking: { ...defaultAnalysis },
-        Writing: { ...defaultAnalysis }
-      }
+        Writing: { ...defaultAnalysis },
+      },
     };
   }
 
   async generateReportData(studentsData: StudentData[]) {
     const distributionData = calculateLevelDistribution(studentsData);
-    
+
     // Generate general recommendations and skill analysis in parallel
     const [generalRecommendations, skillAnalysis] = await Promise.all([
       this.generateGeneralRecommendations(distributionData),
-      this.generateSkillAnalysis(distributionData)
+      this.generateSkillAnalysis(distributionData),
     ]);
 
     // Generate individual recommendations sequentially
@@ -282,9 +301,9 @@ export class ReportFactoryService {
       distribution: distributionData,
       recommendations: {
         general: generalRecommendations,
-        individual: individualRecommendations
+        individual: individualRecommendations,
       },
-      analysis: skillAnalysis
+      analysis: skillAnalysis,
     };
   }
 }

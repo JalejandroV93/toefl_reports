@@ -24,9 +24,9 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({ data }) => {
         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
           <PolarGrid gridType="polygon" />
           <PolarAngleAxis dataKey="subject" tick={{ fill: "#4B5563" }} />
-          <PolarRadiusAxis angle={90} domain={[0, 100]} tickCount={6} />
+          <PolarRadiusAxis angle={90} domain={[0, 30]} tickCount={6} />
           <Tooltip
-            formatter={(value: number) => [`${value}/100`, "Score"]}
+            formatter={(value: number) => [`${value}/30`, "Score"]}
             contentStyle={{ backgroundColor: "white", borderRadius: "8px" }}
           />
           <Radar

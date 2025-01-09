@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { StudentData } from '@/types';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getLevelForScore } from '@/utils/skillAnalysisUtils';
+import { getLevelForScore } from '@/utils/scoreConversion';
 import { SkillRecommendation, Recommendations } from '@/types/recommendations';
 
 export const useGeminiRecommendations = (studentData: StudentData) => {
@@ -38,20 +38,20 @@ export const useGeminiRecommendations = (studentData: StudentData) => {
         const skillsData = {
           READING: {
             score: studentData.READING,
-            level: getLevelForScore(studentData.READING)
+            level: getLevelForScore(studentData.READING, "READING")
           },
           LISTENING: {
             score: studentData.LISTENING,
-            level: getLevelForScore(studentData.LISTENING)
+            level: getLevelForScore(studentData.LISTENING, "LISTENING")
           },
           SPEAKING: {
             score: studentData.SPEAKING,
-            level: getLevelForScore(studentData.SPEAKING),
-            feedback: studentData['FEEDBACK SPEAKING']
+            level: getLevelForScore(studentData.SPEAKING, "SPEAKING"),
+            feedback: studentData["FEEDBACK SPEAKING"],
           },
           WRITING: {
             score: studentData.WRITING,
-            level: getLevelForScore(studentData.WRITING),
+            level: getLevelForScore(studentData.WRITING, "WRITING"),
             feedback: studentData['FEEDBACK WRITING']
           }
         };
@@ -59,6 +59,11 @@ export const useGeminiRecommendations = (studentData: StudentData) => {
         const prompt = `
           Analyze this TOEFL student's performance and generate recommendations.
           Student Data: ${JSON.stringify(skillsData, null, 2)}
+
+          Student Data contains:
+          - Section scores (READING, LISTENING, SPEAKING, WRITING)
+          - Overall proficiency level
+          - Feedback for SPEAKING and WRITING (if available)
 
           For each skill (READING, LISTENING, SPEAKING, WRITING), provide specific recommendations in this exact format (do not include any markdown, code blocks, or other formatting):
 
@@ -76,10 +81,10 @@ export const useGeminiRecommendations = (studentData: StudentData) => {
           }
 
           Guidelines:
-          - Base recommendations on score and level
-          - For Speaking and Writing, analyze the feedback provided
-          - All recommendations should be specific and actionable
-          - Avoid general advice, focus on TOEFL-specific improvements
+          - Base recommendations on section scores and proficiency levels.
+          - Use feedback provided for SPEAKING and WRITING to identify areas for improvement.
+          - Be specific and actionable; avoid general advice.
+          - Focus on TOEFL-specific strategies and improvements.
           - Include only the JSON response, no additional text or formatting
         `;
 

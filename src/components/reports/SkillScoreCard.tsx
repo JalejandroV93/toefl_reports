@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { getLevelForScore } from '@/utils/reportUtils';
+import { getLevelForScore } from '@/utils/scoreConversion';
 
 interface SkillScoreCardProps {
   skill: string;
@@ -8,7 +8,7 @@ interface SkillScoreCardProps {
 }
 
 const SkillScoreCard: React.FC<SkillScoreCardProps> = ({ skill, score }) => {
-  const level = getLevelForScore(score);
+  const level = getLevelForScore(score, skill);
   
   return (
     <Card className="bg-white">

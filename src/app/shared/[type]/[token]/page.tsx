@@ -19,9 +19,9 @@ export default async function SharedReportPage({
 }: SharedReportPageProps) {
   try {
     const { type, token } = await params;
-    console.log("Getting shared report by token:", token);
+    //console.log("Getting shared report by token:", token);
     if (type === "report") {
-      console.log("Getting report by token:", token);
+      //console.log("Getting report by token:", token);
       const report = await serverReportService.getReportByToken(token);
 
       if (!report) {
@@ -95,9 +95,14 @@ export default async function SharedReportPage({
         "FEEDBACK WRITING": studentReport.writingFeedback || "",
       };
 
-      const recommendations = JSON.parse(
-        studentReport.recommendations.toString()
-      );
+      const recommendations = studentReport.recommendations
+        ? JSON.parse(studentReport.recommendations.toString())
+        : {
+            READING: [],
+            LISTENING: [],
+            SPEAKING: [],
+            WRITING: [],
+          };
 
       return (
         <div className="container mx-auto py-8">

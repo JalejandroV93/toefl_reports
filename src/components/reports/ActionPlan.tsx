@@ -4,7 +4,7 @@ import { Shield, Target, BookOpen, MessageSquare, Calendar } from 'lucide-react'
 import { useGeminiRecommendations } from '@/hooks/useGeminiRecommendations';
 import { useGeminiResources } from '@/hooks/useGeminiResources';
 import { Skeleton } from "@/components/ui/skeleton";
-import { getLevelForScore } from '@/utils/skillAnalysisUtils';
+import { getLevelForScore } from '@/utils/scoreConversion';
 
 interface ActionPlanProps {
   studentData: StudentData;
@@ -63,10 +63,16 @@ const SkillSkeleton = () => (
 
 const determineTargetLevels = (studentData: StudentData): string[] => {
   const currentLevels = {
-    READING: { score: studentData.READING, level: getLevelForScore(studentData.READING) },
-    WRITING: { score: studentData.WRITING, level: getLevelForScore(studentData.WRITING) },
-    SPEAKING: { score: studentData.SPEAKING, level: getLevelForScore(studentData.SPEAKING) },
-    LISTENING: { score: studentData.LISTENING, level: getLevelForScore(studentData.LISTENING) }
+    READING: { score: studentData.READING, level: getLevelForScore(studentData.READING, "READING") },
+    WRITING: { score: studentData.WRITING, level: getLevelForScore(studentData.WRITING, "WRITING") },
+    SPEAKING: {
+      score: studentData.SPEAKING,
+      level: getLevelForScore(studentData.SPEAKING, "SPEAKING"),
+    },
+    LISTENING: {
+      score: studentData.LISTENING,
+      level: getLevelForScore(studentData.LISTENING, "LISTENING"),
+    },
   };
 
   const goals: string[] = [];
@@ -75,10 +81,10 @@ const determineTargetLevels = (studentData: StudentData): string[] => {
     const { score, level } = data;
     
     const targetIncrement = 
-      level === 'Below' ? 15 :
-      level === 'A2' ? 12 :
-      level === 'B1' ? 10 :
-      level === 'B2' ? 8 : 5;
+      level === 'A2' ? 15 :
+      level === 'B1' ? 12 :
+      level === 'B2' ? 10 :
+      level === 'C1' ? 8 : 5;
 
     const targetScore = Math.min(score + targetIncrement, 100);
     
