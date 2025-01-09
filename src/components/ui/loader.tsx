@@ -3,7 +3,7 @@ import "@/assets/styles/loader.css";
 const Loader = () => {
   return (
     /* From Uiverse.io by Nawsome */
-    <div className="flex items-center justify-center w-[900px] h-[600px]">
+    <div className="flex mx-auto items-center justify-center w-[900px] h-[600px]">
     <section className="loader">
       <div className="slider" style={{ "--i": 0 } as React.CSSProperties}></div>
       <div className="slider" style={{ "--i": 1 } as React.CSSProperties}></div>

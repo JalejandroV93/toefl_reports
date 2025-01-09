@@ -1,6 +1,6 @@
 // utils/recommendationUtils.ts
 import { StudentData } from '@/types';
-import { getLevelForScore } from '@/utils/reportUtils';
+import { getLevelForScore } from '@/utils/scoreConversion';
 
 interface SkillRecommendation {
   strength: string[];
@@ -37,8 +37,30 @@ const analyzeFeedback = (feedback: string): { strengths: string[], weaknesses: s
 };
 
 const getSkillSpecificActivities = (skill: string, score: number): string[] => {
-  const level = getLevelForScore(score);
+  const level = getLevelForScore(score, skill);
   const levelSpecificActivities = {
+    C2: {
+      READING: [
+        'Analyze complex academic papers',
+        'Practice speed reading with technical texts',
+        'Review research methodologies'
+      ],
+      LISTENING: [
+        'Take notes from complex lectures',
+        'Practice with various accents',
+        'Analyze academic discussions'
+      ],
+      SPEAKING: [
+        'Lead academic discussions',
+        'Give technical presentations',
+        'Practice complex arguments'
+      ],
+      WRITING: [
+        'Write research papers',
+        'Develop complex arguments',
+        'Practice academic writing'
+      ]
+    },
     C1: {
       READING: [
         'Analyze complex academic papers',
@@ -127,42 +149,23 @@ const getSkillSpecificActivities = (skill: string, score: number): string[] => {
         'Basic grammar exercises'
       ]
     },
-    Below: {
-      READING: [
-        'Focus on basics',
-        'Use simplified materials',
-        'Build core vocabulary'
-      ],
-      LISTENING: [
-        'Use simplified audio',
-        'Practice with subtitles',
-        'Focus on basic listening'
-      ],
-      SPEAKING: [
-        'Practice basic expressions',
-        'Focus on pronunciation',
-        'Use language apps'
-      ],
-      WRITING: [
-        'Practice basic sentences',
-        'Focus on grammar basics',
-        'Build writing confidence'
-      ]
-    }
   };
 
   return levelSpecificActivities[level]?.[skill as keyof typeof levelSpecificActivities.C1] || [];
 };
 
 const getSkillSpecificResources = (skill: string, score: number): string[] => {
-  const level = getLevelForScore(score);
+  const level = getLevelForScore(score, skill);
   
   const levelResources = {
+    C2: {
+      suffix: 'proficient'
+    },
     C1: {
       suffix: 'advanced'
     },
     B2: {
-      suffix: 'intermediate-advanced'
+      suffix: 'upper-intermediate'
     },
     B1: {
       suffix: 'intermediate'
@@ -170,9 +173,6 @@ const getSkillSpecificResources = (skill: string, score: number): string[] => {
     A2: {
       suffix: 'basic'
     },
-    Below: {
-      suffix: 'beginner'
-    }
   };
 
   const suffix = levelResources[level]?.suffix;

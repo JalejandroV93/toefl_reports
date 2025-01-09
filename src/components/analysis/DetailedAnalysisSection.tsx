@@ -96,16 +96,17 @@ const DetailedAnalysisSection: React.FC<DetailedAnalysisSectionProps> = ({
                   <p className="text-sm">Average Score: {averageScore.toFixed(1)}</p>
                   <div className="grid grid-cols-3 gap-2 mt-2 text-sm">
                     <div>
+                      <p className="text-green-700">C2: {skillData.C2}</p>
                       <p className="text-green-700">C1: {skillData.C1}</p>
-                      <p className="text-blue-700">B2: {skillData.B2}</p>
                     </div>
                     <div>
+                      <p className="text-blue-700">B2: {skillData.B2}</p>
                       <p className="text-yellow-700">B1: {skillData.B1}</p>
+                    </div>
+                    <div>
                       <p className="text-orange-700">A2: {skillData.A2}</p>
                     </div>
-                    <div>
-                      <p className="text-red-700">Below: {skillData.Below}</p>
-                    </div>
+                   
                   </div>
                 </div>
 

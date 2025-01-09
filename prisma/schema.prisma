@@ -1,0 +1,46 @@
+// schema.prisma
+datasource db {
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Report {
+  id               String    @id @default(uuid())
+  createdAt        DateTime  @default(now())
+  group            String
+  shareToken       String    @unique
+  students         Student[]
+  recommendations  Json    // JSON stored as TEXT
+  distribution     Json    // JSON stored as TEXT
+  
+}
+
+model Student {
+  id               String   @id @default(uuid())
+  reportId         String
+  report           Report   @relation(fields: [reportId], references: [id])
+  name             String
+  lastName         String
+  reading          Float
+  listening        Float
+  speaking         Float
+  writing          Float
+  speakingFeedback String?
+  writingFeedback  String?
+  shareToken       String   @unique
+  recommendations  Json    // JSON stored as TEXT
+}
+
+// For managing access to shared reports
+model SharedAccess {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+  isActive  Boolean   @default(true)
+}

@@ -1,4 +1,5 @@
 // hooks/useGeminiSkillAnalysis.tsx
+'use client';
 import { useState, useEffect } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ChartData } from '@/types';

@@ -85,13 +85,12 @@ class PDFGenerator {
       row.B2,
       row.B1,
       row.A2,
-      row.Below,
       (row.average || 0).toFixed(2)
     ]);
 
     autoTable(state.doc, {
       startY: state.yPos,
-      head: [['Skill', 'C1', 'B2', 'B1', 'A2', 'Below', 'Average']],
+      head: [['Skill', 'C2', 'C1', 'B2', 'B1', 'A2', 'Average']],
       body: tableData,
       theme: 'striped',
       headStyles: {
@@ -129,7 +128,7 @@ class PDFGenerator {
         this.checkPageBreak(state, 30);
 
         const analysisText = `${skill.skill} - Average: ${skill.average?.toFixed(2)}%\n` +
-          `Distribution: C1: ${skill.C1}, B2: ${skill.B2}, B1: ${skill.B1}, A2: ${skill.A2}, Below: ${skill.Below}`;
+          `Distribution: C2: ${skill.C2}, C1: ${skill.C1}, B2: ${skill.B2}, B1: ${skill.B1}, A2: ${skill.A2}`;
 
         const lines = state.doc.splitTextToSize(analysisText, CONTENT_WIDTH);
         state.doc.text(lines, MARGIN, state.yPos);

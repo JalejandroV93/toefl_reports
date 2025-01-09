@@ -1,35 +1,33 @@
-import React from 'react';
-import { ChartData } from '@/types';
-import { getLevelForScore } from '@/utils/reportUtils';
-import { Presentation } from 'lucide-react';
-
-interface ExecutiveSummaryProps {
-  studentsCount: number;
-  distributionData: ChartData[];
-  highestPerformanceSkill: string;
-  lowestPerformanceSkill: string;
-}
+import { ExecutiveSummaryProps } from "@/types";
+import { getTotalLevel } from "@/utils/scoreConversion";
+import {
+  calculateOverallAverage,
+  analyzeSkillPerformance,
+} from "@/utils/reportUtils";
+import { Presentation } from "lucide-react";
+import React from "react";
 
 const ExecutiveSummarySection: React.FC<ExecutiveSummaryProps> = ({
   studentsCount,
   distributionData,
-  highestPerformanceSkill
 }) => {
-  const overallData = distributionData.find(item => item.skill === "Overall");
-  
-  // Encontrar la habilidad que necesita más mejoras basado en múltiples factores
-  const skillsAnalysis = distributionData
-    .filter(item => item.skill !== "Overall")
-    .map(skill => ({
-      skill: skill.skill,
-      average: skill.average || 0,
-      belowA2Count: skill.Below,
-      a2Count: skill.A2,
-      needsImprovement: (skill.Below + skill.A2) / studentsCount * 100, // Porcentaje de estudiantes en niveles bajos
-    }))
-    .sort((a, b) => b.needsImprovement - a.needsImprovement);
+  const calculatedOverallAverage = calculateOverallAverage(
+    distributionData,
+    studentsCount
+  );
 
-  const mostChallengedSkill = skillsAnalysis[0];
+  // Analizar el rendimiento de cada skill
+  const skillsAnalysis = distributionData
+    .filter((item) => item.skill !== "Overall")
+    .map((skill) => analyzeSkillPerformance(skill, studentsCount));
+
+  // Ordenar por rendimiento para encontrar la mejor y peor skill
+  const sortedByPerformance = [...skillsAnalysis].sort(
+    (a, b) => b.performanceScore - a.performanceScore
+  );
+  const bestPerformingSkill = sortedByPerformance[0];
+  const worstPerformingSkill =
+    sortedByPerformance[sortedByPerformance.length - 1];
 
   return (
     <section>
@@ -39,48 +37,64 @@ const ExecutiveSummarySection: React.FC<ExecutiveSummaryProps> = ({
       </div>
       <div className="bg-gray-50 p-6 rounded-lg">
         <p className="text-gray-700 mb-4">
-          Analysis based on the evaluation of {studentsCount} students across the four main TOEFL skills. 
-          The overall average is at {getLevelForScore(overallData?.average || 0)} level 
-          ({(overallData?.average || 0).toFixed(1)} points), with significant variations across skills.
+          Analysis based on the evaluation of {studentsCount} students across
+          the four main TOEFL skills. The overall average is at{" "}
+          {getTotalLevel(calculatedOverallAverage)} level (
+          {calculatedOverallAverage.toFixed(1)} points).
         </p>
         <div className="grid grid-cols-2 gap-4 mt-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-medium mb-2">Highest Performance</h3>
-            <p>{highestPerformanceSkill} ({distributionData.find(item => 
-              item.skill === highestPerformanceSkill)?.average?.toFixed(1)} average)</p>
-            <ul className="list-disc ml-4 mt-2 text-sm">
-              <li>
-                {distributionData.find(item => 
-                  item.skill === highestPerformanceSkill)?.C1} students at C1 level
-              </li>
-              <li>
-                {distributionData.find(item => 
-                  item.skill === highestPerformanceSkill)?.B2} students at B2 level
-              </li>
-            </ul>
-          </div>
-          <div className="bg-red-50 p-4 rounded-lg">
-            <h3 className="font-medium mb-2">Areas for Improvement</h3>
-            <p>{mostChallengedSkill.skill} ({mostChallengedSkill.average.toFixed(1)} average)</p>
-            <ul className="list-disc ml-4 mt-2 text-sm">
-              {mostChallengedSkill.belowA2Count > 0 && (
-                <li>
-                  {mostChallengedSkill.belowA2Count} students below A2 level
-                </li>
-              )}
-              {mostChallengedSkill.a2Count > 0 && (
-                <li>
-                  {mostChallengedSkill.a2Count} students at A2 level
-                </li>
-              )}
-              <li>
-                {mostChallengedSkill.needsImprovement.toFixed(1)}% of students at basic levels
-              </li>
-            </ul>
-          </div>
+          <PerformanceCard
+            type="best"
+            skillData={bestPerformingSkill}
+            studentsCount={studentsCount}
+          />
+          <PerformanceCard
+            type="worst"
+            skillData={worstPerformingSkill}
+            studentsCount={studentsCount}
+          />
         </div>
       </div>
     </section>
+  );
+};
+
+interface PerformanceCardProps {
+  type: "best" | "worst";
+  skillData: ReturnType<typeof analyzeSkillPerformance>;
+  studentsCount: number;
+}
+
+const PerformanceCard: React.FC<PerformanceCardProps> = ({
+  type,
+  skillData,
+  studentsCount,
+}) => {
+  const isBest = type === "best";
+
+  return (
+    <div className={`${isBest ? "bg-blue-50" : "bg-red-50"} p-4 rounded-lg`}>
+      <h3 className="font-medium mb-2">
+        {isBest ? "Highest Performance" : "Areas for Improvement"}
+      </h3>
+      <p>
+        {skillData.skill} ({skillData.average.toFixed(1)} average)
+      </p>
+      <ul className="list-disc ml-4 mt-2 text-sm">
+        <li>
+          {isBest
+            ? `${skillData.highLevelCount} students at B2 or higher`
+            : `${skillData.lowLevelCount} students at B1 or lower`}
+        </li>
+        <li>
+          {isBest
+            ? `${((skillData.highLevelCount / studentsCount) * 100).toFixed(
+                1
+              )}% advanced performance`
+            : `${skillData.needsImprovement.toFixed(1)}% need improvement`}
+        </li>
+      </ul>
+    </div>
   );
 };
 

@@ -1,8 +1,8 @@
-// hooks/useGeminiResources.tsx
-import { useState, useEffect } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { StudentData } from '@/types';
-import { getLevelForScore } from '@/utils/skillAnalysisUtils';
+import { getLevelForScore } from '@/utils/scoreConversion';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+// hooks/useGeminiResources.tsx
+import { useEffect, useState } from 'react';
 
 export interface ResourceCategory {
   category: string;
@@ -30,20 +30,20 @@ export const useGeminiResources = (studentData: StudentData) => {
       const skillsData = {
         READING: {
           score: studentData.READING,
-          level: getLevelForScore(studentData.READING)
+          level: getLevelForScore(studentData.READING, "READING")
         },
         LISTENING: {
           score: studentData.LISTENING,
-          level: getLevelForScore(studentData.LISTENING)
+          level: getLevelForScore(studentData.LISTENING, "LISTENING")
         },
         SPEAKING: {
           score: studentData.SPEAKING,
-          level: getLevelForScore(studentData.SPEAKING),
-          feedback: studentData['FEEDBACK SPEAKING']
+          level: getLevelForScore(studentData.SPEAKING, "SPEAKING"),
+          feedback: studentData["FEEDBACK SPEAKING"],
         },
         WRITING: {
           score: studentData.WRITING,
-          level: getLevelForScore(studentData.WRITING),
+          level: getLevelForScore(studentData.WRITING, "WRITING"),
           feedback: studentData['FEEDBACK WRITING']
         }
       };
@@ -72,13 +72,17 @@ export const useGeminiResources = (studentData: StudentData) => {
           Student Profile:
           ${JSON.stringify(skillsData, null, 2)}
 
-          Consider:
-          1. Current level and areas needing improvement in each skill
-          2. Specific feedback provided for speaking and writing
-          3. Modern learning tools and platforms available in 2024
-          4. Mix of free and premium resources
-          5. Both test preparation and general academic English development
+          Student Profile includes:
+          - Skill scores (READING, LISTENING, SPEAKING, WRITING)
+          - Overall proficiency level
 
+          Consider:
+         1. Analyze the student's current level and weaknesses in each skill.
+          2. Incorporate feedback provided for SPEAKING and WRITING.
+          3. Recommend modern learning tools and platforms available in 2024.
+          4. Prioritize free resources but include a mix of free and premium options.
+          5. Focus on both TOEFL preparation and general academic English development.
+          6. Provide 1–3 resources per category.
           Provide recommendations in this exact JSON format:
           {
             "categories": [
@@ -88,25 +92,28 @@ export const useGeminiResources = (studentData: StudentData) => {
                 "resources": [
                   {
                     "name": "resource name",
-                    "description": "detailed description",
+                    "description": "detailed description, how it helps the student, and why it is recommended",
                     "url": "optional URL",
                     "type": "app | website | tool | practice | course",
-                    "focus": ["specific skills or areas targeted"]
+                    "focus": ["specific skills or areas targeted by this resource"]
                   }
                 ]
               }
             ]
           }
 
-          Include diverse categories such as:
-          - Mobile Learning Apps
-          - Academic Resources
-          - Practice Platforms
-          - Interactive Tools
-          - Community and Exchange
-          - Assessment and Tracking
+          Include these diverse categories:
+          - Mobile Learning Apps: Tools for learning on the go, focused on listening, vocabulary, and grammar.
+          - Academic Resources: Websites or platforms for improving academic English skills.
+          - Practice Platforms: Tools for targeted TOEFL or general English practice.
+          - Interactive Tools: Games, simulations, or tools for interactive learning.
+          - Community and Exchange: Platforms for language exchange, discussion forums, or speaking groups.
+          - Assessment and Tracking: Tools for self-assessment and tracking progress.
 
-          Make recommendations specific to the student's weak areas and learning needs.
+          Guidelines:
+          - Match recommendations to the student's weaknesses and learning needs.
+          - Focus on actionable and practical resources.
+          - Ensure all resources are relevant and up-to-date as of 2024.
         `;
 
         const result = await model.generateContent(prompt);

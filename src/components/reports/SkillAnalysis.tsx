@@ -1,7 +1,7 @@
 import { SkillRecommendation } from "@/types/recommendations";
-import { getLevelForScore } from "@/utils/reportUtils";
+import { getLevelForScore } from '@/utils/scoreConversion';
+import { BookOpen, BookOpenCheck, Headphones, MessageSquare } from "lucide-react";
 import React from "react";
-import { BookOpenCheck, Headphones, MessageSquare, BookOpen } from "lucide-react";
 
 interface SkillAnalysisProps {
   skill: string;
@@ -16,8 +16,8 @@ const SkillAnalysis: React.FC<SkillAnalysisProps> = ({
   feedback,
   recommendations,
 }) => {
-  const level = getLevelForScore(score);
-
+  const level = getLevelForScore(score, skill);
+  //console.log("feedback", feedback);
   const getSkillConfig = (skillName: string) => {
     const configs = {
       READING: {

@@ -1,175 +1,183 @@
-import { Skill } from '@/types';
+import { Skill } from "@/types";
+import { getLevelForScore } from "@/utils/scoreConversion";
 
-export type Level = 'C1' | 'B2' | 'B1' | 'A2' | 'Below';
-
-export const getLevelForScore = (score: number): Level => {
-  if (score >= 80) return 'C1';
-  if (score >= 60) return 'B2';
-  if (score >= 40) return 'B1';
-  if (score >= 20) return 'A2';
-  return 'Below';
-};
+export type Level = "C2" | "C1" | "B2" | "B1" | "A2";
 
 export const getNextLevel = (currentLevel: Level): Level => {
-  const levels: Level[] = ['Below', 'A2', 'B1', 'B2', 'C1'];
+  const levels: Level[] = ["A2", "B1", "B2", "C1", "C2"];
   const currentIndex = levels.indexOf(currentLevel);
-  return currentIndex < levels.length - 1 ? levels[currentIndex + 1] : currentLevel;
+  return currentIndex < levels.length - 1
+    ? levels[currentIndex + 1]
+    : currentLevel;
 };
 
 export const getSkillAnalysis = (skill: string, score: number): string => {
-  const level = getLevelForScore(score);
-  
+  const level = getLevelForScore(score, skill);
+
   const analyses = {
     READING: {
-      C1: "Advanced reading comprehension. Can handle complex academic texts.",
-      B2: "Good comprehension of advanced texts. Some difficulty with technical vocabulary.",
-      B1: "Basic comprehension of general texts. Needs improvement in speed and vocabulary.",
-      A2: "Limited reading comprehension. Needs development of reading strategies.",
-      Below: "Requires intensive support in reading comprehension."
-    },
-    LISTENING: {
-      C1: "Excellent listening comprehension in various contexts.",
-      B2: "Good comprehension in most situations.",
-      B1: "Moderate comprehension. Difficulties with accents and speed.",
-      A2: "Basic comprehension. Needs more exposure to listening materials.",
-      Below: "Requires intensive practice in listening comprehension."
-    },
-    SPEAKING: {
-      C1: "Fluent and natural communication in various contexts.",
-      B2: "Good fluency with minor errors.",
-      B1: "Basic effective communication. Needs to improve fluency.",
-      A2: "Limited communication abilities. Requires more oral practice.",
-      Below: "Needs intensive development of speaking skills."
-    },
-    WRITING: {
-      C1: "Excellent written expression across various genres.",
-      B2: "Good writing ability with clear structure.",
-      B1: "Basic effective writing. Needs improvement in organization.",
-      A2: "Limited writing ability. Requires development of structure.",
-      Below: "Needs intensive support in written expression."
-    }
+      C2: "Exceptional comprehension of academic and professional texts, including nuanced meanings.",
+      C1: "Strong comprehension of complex texts with occasional need for contextual clarification.",
+      B2: "Good understanding of general and some technical texts. Struggles with highly specialized content.",
+      B1: "Fair comprehension of straightforward texts. Challenges with abstract or idiomatic language.",
+      A2: "Basic ability to understand short, simple texts with familiar vocabulary.",
+  },
+  LISTENING: {
+      C2: "Understands a wide range of spoken language at natural speed, including abstract and technical content.",
+      C1: "Can follow extended speech and complex arguments in various contexts with minimal difficulty.",
+      B2: "Understands standard speech on familiar topics but may miss finer details or fast-paced dialogue.",
+      B1: "Can grasp main points in clear, standard speech but struggles with detail and unfamiliar topics.",
+      A2: "Understands slow, clear speech with simple vocabulary.",
+  },
+  SPEAKING: {
+      C2: "Communicates fluently, accurately, and effectively in both formal and informal settings.",
+      C1: "Speaks fluently with rare pauses, using a wide range of expressions and appropriate tone.",
+      B2: "Expresses ideas clearly with good control of grammar, though with occasional errors.",
+      B1: "Can handle basic interactions with limited fluency and control over more complex ideas.",
+      A2: "Produces simple phrases and sentences. Struggles to maintain longer conversations.",
+  },
+  WRITING: {
+      C2: "Produces well-structured, detailed texts in any genre with natural use of language.",
+      C1: "Writes clear, detailed texts on complex topics, using appropriate tone and vocabulary.",
+      B2: "Writes structured texts with clarity, though errors in grammar and vocabulary persist.",
+      B1: "Can write simple connected texts on familiar topics with limited range and accuracy.",
+      A2: "Writes short, basic texts using common expressions. Limited grammatical control.",
+  },
   };
 
-  return analyses[skill as keyof typeof analyses]?.[level] || "Analysis not available";
+  return (
+    analyses[skill as keyof typeof analyses]?.[level] ||
+    "Analysis not available"
+  );
 };
 
-export const getRecommendedActivities = (skill: Skill, score: number): string[] => {
-  const level = getLevelForScore(score);
-  
+export const getRecommendedActivities = (
+  skill: Skill,
+  score: number
+): string[] => {
+  const level = getLevelForScore(score, skill);
+
   const activities: Record<Skill, Record<Level, string[]>> = {
     READING: {
-      Below: [
-        "Practice basic sight words daily",
-        "Use graded readers at beginner level",
-        "Work with simplified texts and comprehension exercises"
-      ],
-      A2: [
-        "Read short articles with guided questions",
-        "Practice identifying main ideas",
-        "Use vocabulary flashcards regularly"
-      ],
-      B1: [
-        "Read news articles daily",
-        "Practice skimming and scanning",
-        "Work on academic vocabulary"
-      ],
-      B2: [
-        "Read academic papers",
-        "Practice critical analysis",
-        "Work on advanced vocabulary"
-      ],
-      C1: [
-        "Read complex academic texts",
-        "Analyze research papers",
-        "Practice speed reading"
-      ]
+        
+        A2: [
+            "Read simple stories or articles with guided questions",
+            "Practice identifying main ideas in short texts",
+            "Use vocabulary flashcards for key terms",
+        ],
+        B1: [
+            "Read simplified news articles daily",
+            "Practice skimming and scanning for key details",
+            "Expand vocabulary with topic-specific texts",
+        ],
+        B2: [
+            "Read opinion pieces and editorials",
+            "Practice critical analysis of arguments",
+            "Work on understanding advanced vocabulary",
+        ],
+        C1: [
+            "Read complex academic and technical texts",
+            "Analyze arguments and infer implicit meanings",
+            "Practice speed reading for comprehension",
+        ],
+        C2: [
+            "Read advanced literature and specialized research papers",
+            "Engage in detailed text analysis",
+            "Explore nuanced literary and technical language",
+        ],
     },
     LISTENING: {
-      Below: [
-        "Listen to basic English dialogues",
-        "Practice with slow-speed audio",
-        "Use subtitled videos for support"
-      ],
-      A2: [
-        "Watch educational videos with subtitles",
-        "Practice with short dialogues",
-        "Listen to slow-paced podcasts"
-      ],
-      B1: [
-        "Watch news broadcasts",
-        "Practice note-taking",
-        "Listen to academic lectures"
-      ],
-      B2: [
-        "Attend online lectures",
-        "Practice with various accents",
-        "Take detailed notes"
-      ],
-      C1: [
-        "Listen to complex academic content",
-        "Practice with fast-paced content",
-        "Work with technical presentations"
-      ]
+        
+        A2: [
+            "Watch short videos with subtitles",
+            "Practice understanding simple dialogues",
+            "Listen to slow-paced podcasts on familiar topics",
+        ],
+        B1: [
+            "Listen to news broadcasts with simplified language",
+            "Practice taking notes on main ideas",
+            "Engage with interviews or conversational podcasts",
+        ],
+        B2: [
+            "Listen to academic lectures with subtitles",
+            "Practice understanding various accents",
+            "Take detailed notes from longer audio content",
+        ],
+        C1: [
+            "Engage with fast-paced academic content",
+            "Analyze complex arguments in spoken form",
+            "Practice understanding technical presentations",
+        ],
+        C2: [
+            "Listen to advanced professional discussions",
+            "Analyze subtle differences in tone and nuance",
+            "Engage with complex, multi-speaker dialogues",
+        ],
     },
     SPEAKING: {
-      Below: [
-        "Practice basic pronunciation daily",
-        "Record simple sentences",
-        "Work with a language partner on basics"
-      ],
-      A2: [
-        "Participate in basic conversations",
-        "Practice common phrases",
-        "Record short descriptions"
-      ],
-      B1: [
-        "Join conversation groups",
-        "Give short presentations",
-        "Practice expressing opinions"
-      ],
-      B2: [
-        "Participate in debates",
-        "Give academic presentations",
-        "Practice impromptu speaking"
-      ],
-      C1: [
-        "Lead academic discussions",
-        "Give complex presentations",
-        "Practice public speaking"
-      ]
+        
+        A2: [
+            "Participate in basic role-play conversations",
+            "Practice using common phrases in everyday contexts",
+            "Record short self-introductions or daily activities",
+        ],
+        B1: [
+            "Join conversation groups to improve fluency",
+            "Give short presentations on familiar topics",
+            "Practice expressing opinions on everyday issues",
+        ],
+        B2: [
+            "Engage in structured debates on current events",
+            "Deliver detailed academic presentations",
+            "Practice impromptu speaking with minimal preparation",
+        ],
+        C1: [
+            "Lead discussions on professional or academic topics",
+            "Give in-depth presentations with complex ideas",
+            "Practice public speaking with an advanced audience",
+        ],
+        C2: [
+            "Lead and moderate academic panels",
+            "Deliver polished presentations on specialized topics",
+            "Engage in persuasive speaking with expert audiences",
+        ],
     },
     WRITING: {
-      Below: [
-        "Practice basic sentence structure",
-        "Write simple sentences daily",
-        "Work on basic grammar exercises"
-      ],
-      A2: [
-        "Write short paragraphs",
-        "Practice basic essay structure",
-        "Work on connecting ideas"
-      ],
-      B1: [
-        "Write basic essays",
-        "Practice paragraph organization",
-        "Work on coherence"
-      ],
-      B2: [
-        "Write academic essays",
-        "Practice argumentation",
-        "Work on advanced grammar"
-      ],
-      C1: [
-        "Write research papers",
-        "Develop complex arguments",
-        "Practice academic writing"
-      ]
-    }
-  };
+        
+        A2: [
+            "Write short paragraphs about familiar topics",
+            "Practice basic essay structure with simple connectors",
+            "Work on combining sentences to connect ideas",
+        ],
+        B1: [
+            "Write essays on general topics using clear structure",
+            "Practice organizing ideas into cohesive paragraphs",
+            "Focus on coherence and logical flow",
+        ],
+        B2: [
+            "Write academic-style essays with supporting arguments",
+            "Practice constructing complex sentences",
+            "Work on advanced grammar and formal tone",
+        ],
+        C1: [
+            "Develop research papers with detailed analysis",
+            "Write complex arguments with critical perspectives",
+            "Practice academic writing in various formats",
+        ],
+        C2: [
+            "Produce professional-quality research papers",
+            "Craft nuanced and well-structured arguments",
+            "Refine academic writing for publication standards",
+        ],
+    },
+};
 
-  return activities[skill]?.[level] || [
-    "Practice regularly with structured materials",
-    "Work with a language tutor",
-    "Focus on foundational skills"
-  ];
+
+  return (
+    activities[skill]?.[level] || [
+      "Practice regularly with structured materials",
+      "Work with a language tutor",
+      "Focus on foundational skills",
+    ]
+  );
 };

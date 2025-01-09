@@ -1,6 +1,6 @@
 import { StudentData } from '@/types';
 import { Recommendations } from '@/types/recommendations';
-import { getLevelForScore } from '@/utils/skillAnalysisUtils';
+import { getLevelForScore } from '@/utils/scoreConversion';
 // utils/individualPdfGenerator.ts
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -52,7 +52,7 @@ class IndividualPDFGenerator {
       return [
         skill,
         score.toString(),
-        getLevelForScore(score),
+        getLevelForScore(score, skill),
       ];
     });
 
