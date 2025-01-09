@@ -14,8 +14,8 @@ model Report {
   group            String
   shareToken       String    @unique
   students         Student[]
-  recommendations  String    // JSON stored as TEXT
-  distribution     String    // JSON stored as TEXT
+  recommendations  Json    // JSON stored as TEXT
+  distribution     Json    // JSON stored as TEXT
   
 }
 
@@ -32,7 +32,7 @@ model Student {
   speakingFeedback String?
   writingFeedback  String?
   shareToken       String   @unique
-  recommendations  String   // JSON stored as TEXT
+  recommendations  Json    // JSON stored as TEXT
 }
 
 // For managing access to shared reports

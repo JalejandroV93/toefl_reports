@@ -1,5 +1,5 @@
 // components/reports/DeleteReportDialog.tsx
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,22 +19,31 @@ interface DeleteReportDialogProps {
 
 export function DeleteReportDialog({ onDelete }: DeleteReportDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [deleteKey, setDeleteKey] = useState('');
+  const [deleteKey, setDeleteKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleDelete = async () => {
-    if (deleteKey !== process.env.DELETE_KEY) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Invalid deletion key",
-      });
-      return;
-    }
-
-    setIsLoading(true);
     try {
+      // Validar la clave primero
+      const response = await fetch("/api/reports/validate-key", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ deleteKey }),
+      });
+
+      if (!response.ok) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Invalid deletion key",
+        });
+        return;
+      }
+
+      setIsLoading(true);
       await onDelete();
       setIsOpen(false);
       toast({
@@ -56,7 +65,8 @@ export function DeleteReportDialog({ onDelete }: DeleteReportDialogProps) {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="destructive" size="lg">
-          <Trash2 className="h-10 w-10" /><p>Eliminar Reportes</p>
+          <Trash2 className="h-10 w-10" />
+          <p>Eliminar Reportes</p>
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -72,10 +82,7 @@ export function DeleteReportDialog({ onDelete }: DeleteReportDialogProps) {
             placeholder="Enter deletion key"
           />
           <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
               Cancel
             </Button>
             <Button

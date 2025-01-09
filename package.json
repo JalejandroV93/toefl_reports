@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "@next/env": "^15.1.4",
     "@prisma/client": "^6.0.1",
     "@radix-ui/react-collapsible": "^1.1.2",
     "@radix-ui/react-dialog": "^1.1.3",
