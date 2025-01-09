@@ -24,7 +24,7 @@ export function DeleteReportDialog({ onDelete }: DeleteReportDialogProps) {
   const { toast } = useToast();
 
   const handleDelete = async () => {
-    if (deleteKey !== process.env.NEXT_PUBLIC_DELETE_KEY) {
+    if (deleteKey !== process.env.DELETE_KEY) {
       toast({
         variant: "destructive",
         title: "Error",
