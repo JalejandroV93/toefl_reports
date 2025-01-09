@@ -49,7 +49,7 @@ const GeneralReport: React.FC<GeneralReportProps> = ({ studentsData }) => {
     <Card className="w-full">
       <CardHeader className="flex flex-row justify-between items-center">
         <CardTitle className="text-3xl font-bold">
-          TOEFL Assessment General Report
+         General Report
         </CardTitle>
         <Button
           onClick={handleDownloadPDF}
