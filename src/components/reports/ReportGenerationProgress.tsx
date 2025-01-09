@@ -5,6 +5,7 @@ import { GenerationProgress } from "@/services/reportFactoryService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, Users, BarChart } from "lucide-react";
 import { geminiRateLimiter } from "@/services/geminiRateLimiter";
+import WriterLoader from "@/components/ui/writer";
 
 interface ReportGenerationProgressProps {
   progress: GenerationProgress;
@@ -84,41 +85,46 @@ const ReportGenerationProgress: React.FC<ReportGenerationProgressProps> = ({
   const percentage = (progress.current / progress.total) * 100;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {getStageIcon(progress.stage)}
-          {getStageTitle(progress.stage)}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <Progress value={percentage} />
-          <div className="flex justify-between text-sm text-gray-500">
-            <span>
-              Processing {progress.current} of {progress.total}
-            </span>
-            <span>
-              Processing time: {formatTime(calculateTotalEstimatedTime())}
-            </span>
-          </div>
-          {queueInfo.position > 0 && (
+    <div className="flex flex-row items-center justify-between gap-2">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {getStageIcon(progress.stage)}
+            {getStageTitle(progress.stage)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col space-y-4">
+            <Progress value={percentage} />
             <div className="flex justify-between text-sm text-gray-500">
-              <span>Position in queue: {queueInfo.position}</span>
-              <span className="hidden">Queue wait: {formatTime(queueInfo.estimatedWait)}</span>
+              <span>
+                Processing {progress.current} of {progress.total}
+              </span>
+              <span>
+                Processing time: {formatTime(calculateTotalEstimatedTime())}
+              </span>
             </div>
-          )}
-          <div className="text-sm text-gray-500 text-right">
-            <span>
-              Total estimated time:{" "}
-              {formatTime(
-                calculateTotalEstimatedTime() + queueInfo.estimatedWait
-              )}
-            </span>
+            {queueInfo.position > 0 && (
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Position in queue: {queueInfo.position}</span>
+                <span className="hidden">
+                  Queue wait: {formatTime(queueInfo.estimatedWait)}
+                </span>
+              </div>
+            )}
+            <div className="text-sm text-gray-500 text-right">
+              <span>
+                Total estimated time:{" "}
+                {formatTime(
+                  calculateTotalEstimatedTime() + queueInfo.estimatedWait
+                )}
+              </span>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      <WriterLoader />
+    </div>
   );
 };
 
