@@ -1,5 +1,3 @@
-"use server";
-
 import { notFound } from "next/navigation";
 import { serverReportService } from "@/services/server/reportService";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,16 +5,13 @@ import GeneralReport from "@/components/analysis/GeneralReport";
 import IndividualReport from "@/components/reports/IndividualReport";
 import { StudentData } from "@/types";
 import { Logo } from "@/components/ui/logo";
-interface SharedReportPageProps {
-  params: {
+
+type tParams = Promise<{
     type: "report" | "student";
     token: string;
-  };
-}
+}>;
 
-export default async function SharedReportPage({
-  params,
-}: SharedReportPageProps) {
+async function SharedReportPage({ params }: { params: tParams }) {
   try {
     const { type, token } = await params;
     //console.log("Getting shared report by token:", token);
@@ -153,3 +148,4 @@ export default async function SharedReportPage({
     notFound();
   }
 }
+export default SharedReportPage;
