@@ -40,8 +40,20 @@ export default async function SharedReportPage({
         "FEEDBACK WRITING": student.writingFeedback || "",
       }));
 
-      const recommendations = JSON.parse(report.recommendations.toString());
-      const distribution = JSON.parse(report.distribution.toString());
+      // Add null checks and provide default values
+      const recommendations = report.recommendations
+        ? JSON.parse(report.recommendations.toString())
+        : {
+            READING: [],
+            LISTENING: [],
+            SPEAKING: [],
+            WRITING: [],
+          };
+
+      const distribution = report.distribution
+        ? JSON.parse(report.distribution.toString())
+        : {};
+
       const analysis = report.analysis
         ? JSON.parse(report.analysis.toString())
         : null;

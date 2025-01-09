@@ -1,11 +1,9 @@
-// components/reports/ReportGenerationProgress.tsx
-import React, { useEffect, useState } from "react";
-import { Progress } from "@/components/ui/progress";
-import { GenerationProgress } from "@/services/reportFactoryService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Users, BarChart } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { geminiRateLimiter } from "@/services/geminiRateLimiter";
-import WriterLoader from "@/components/ui/writer";
+import { GenerationProgress } from "@/services/reportFactoryService";
+import { BarChart, Brain, Users } from "lucide-react";
+import React, { useEffect, useState } from "react";
 
 interface ReportGenerationProgressProps {
   progress: GenerationProgress;
@@ -85,8 +83,7 @@ const ReportGenerationProgress: React.FC<ReportGenerationProgressProps> = ({
   const percentage = (progress.current / progress.total) * 100;
 
   return (
-    <div className="flex flex-row items-center justify-between gap-2">
-      <Card>
+     <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {getStageIcon(progress.stage)}
@@ -123,8 +120,6 @@ const ReportGenerationProgress: React.FC<ReportGenerationProgressProps> = ({
           </div>
         </CardContent>
       </Card>
-      <WriterLoader />
-    </div>
   );
 };
 

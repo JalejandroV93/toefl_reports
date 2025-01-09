@@ -39,7 +39,7 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
   const radarData = SKILLS.map((skill) => ({
     subject: skill,
     score: studentData[skill],
-    fullMark: 100,
+    fullMark: 30,
   }));
 
   const totalScore = calculateTotalScore(studentData);
@@ -48,6 +48,7 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
   if (isLoading) {
     return <Loader />;
   }
+  console.log("feedback ind", studentData["FEEDBACK WRITING"]);
 
   const getFeedbackKey = (skill: (typeof SKILLS)[number]) => {
     return `FEEDBACK ${skill}` as keyof StudentData;
