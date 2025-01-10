@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { StudentData } from "@/types";
-import { generateIndividualReportPDF } from "@/utils/individualPdfGenerator";
+/* import { generateIndividualReportPDF } from "@/utils/individualPdfGenerator"; */
 import SkillScoreCard from "./SkillScoreCard";
 import SkillsRadar from "./SkillsRadar";
 import SkillAnalysis from "./SkillAnalysis";
@@ -29,12 +29,12 @@ const SKILLS = ["READING", "LISTENING", "SPEAKING", "WRITING"] as const;
 const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
   const { recommendations, isLoading } = useGeminiRecommendations(studentData);
 
-  const handleDownloadPDF = async () => {
+  /* const handleDownloadPDF = async () => {
     const doc = generateIndividualReportPDF(studentData, recommendations);
     doc.save(
       `${studentData.Nombre}_${studentData["Apellido(s)"]}_TOEFL_Report.pdf`
     );
-  };
+  }; */
 
   const radarData = SKILLS.map((skill) => ({
     subject: skill,
@@ -54,7 +54,7 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
     return `FEEDBACK ${skill}` as keyof StudentData;
   };
 
-
+  const handlePrint = () => { window.print(); };
 
   return (
     <Card className="w-full">
@@ -66,9 +66,9 @@ const IndividualReport: React.FC<IndividualReportProps> = ({ studentData }) => {
           <p className="text-sm text-gray-500 mt-1">TOEFL Assessment Report</p>
         </div>
         <Button
-          onClick={handleDownloadPDF}
+          onClick={handlePrint}
           variant="outline"
-          className="ml-auto"
+          className="ml-auto print:hidden"
         >
           <Download className="mr-2 h-4 w-4" />
           Download PDF
