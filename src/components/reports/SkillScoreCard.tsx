@@ -19,13 +19,13 @@ const SkillScoreCard: React.FC<SkillScoreCardProps> = ({ skill, score }) => {
   const getSkillIcon = () => {
     switch (skill.toLowerCase()) {
       case "reading":
-        return <BookOpen className="w-16 h-16 text-blue-600 " />;
+        return <BookOpen className="w-16 h-16 text-blue-600 print:hidden" />;
       case "writing":
-        return <BookOpenCheck className="w-16 h-16 text-blue-600 mb-2" />;
+        return <BookOpenCheck className="w-16 h-16 text-blue-600 mb-2 print:hidden" />;
       case "listening":
-        return <Headphones className="w-16 h-16 text-blue-600 mb-2" />;
+        return <Headphones className="w-16 h-16 text-blue-600 mb-2 print:hidden" />;
       case "speaking":
-        return <MessageSquare className="w-16 h-16 text-blue-600 mb-2" />;
+        return <MessageSquare className="w-16 h-16 text-blue-600 mb-2 print:hidden" />;
       default:
         return null;
     }
