@@ -65,11 +65,16 @@ export class ReportFactoryService {
         if (data.success) {
           return data.data;
         } else {
-          throw new Error(data.error || "Failed to fetch recommendations");
+          // IMPORTANT: Return default recommendations on failure
+          console.error(
+            "Gemini API failed (general recommendations):",
+            data.error
+          ); // Log the specific error
+          return this.getDefaultGeneralRecommendations();
         }
       } catch (error) {
         console.error("Error generating general recommendations:", error);
-        return this.getDefaultGeneralRecommendations();
+        return this.getDefaultGeneralRecommendations(); // Return defaults
       }
     });
   }
@@ -102,11 +107,16 @@ export class ReportFactoryService {
           if (data.success) {
             return data.data;
           } else {
-            throw new Error(data.error || "Failed to fetch recommendations");
+            // IMPORTANT: Return default recommendations on failure
+            console.error(
+              "Gemini API failed (individual recommendations):",
+              data.error
+            );
+            return this.getDefaultIndividualRecommendations();
           }
         } catch (error) {
           console.error("Error generating individual recommendations:", error);
-          return this.getDefaultIndividualRecommendations();
+          return this.getDefaultIndividualRecommendations(); // Return defaults
         }
       }
     );
@@ -128,11 +138,13 @@ export class ReportFactoryService {
         if (data.success) {
           return data.data;
         } else {
-          throw new Error(data.error || "Failed to fetch recommendations");
+          // IMPORTANT: Return default analysis on failure
+          console.error("Gemini API failed (skill analysis):", data.error);
+          return this.getDefaultSkillAnalysis();
         }
       } catch (error) {
         console.error("Error generating skill analysis:", error);
-        return this.getDefaultSkillAnalysis();
+        return this.getDefaultSkillAnalysis(); // Return defaults
       }
     });
   }
@@ -140,16 +152,16 @@ export class ReportFactoryService {
   private getDefaultGeneralRecommendations() {
     return {
       shortTermActions: [
-        "Implement intensive practice sessions for core skills",
+        "Implement intensive practice for lowest-performing skills",
         "Develop structured assessment program",
-        "Create focused study groups for each skill level",
-        "Provide targeted resources for identified weak areas",
+        "Create skill-specific study groups",
+        "Provide targeted resources for weak areas",
       ],
       longTermStrategy: [
-        "Establish comprehensive progress monitoring system",
-        "Develop curriculum alignment with TOEFL requirements",
+        "Establish regular progress monitoring system",
+        "Develop comprehensive curriculum alignment",
         "Create personalized learning pathways",
-        "Implement integrated skills approach across all levels",
+        "Implement integrated skills approach",
       ],
     };
   }
@@ -232,7 +244,11 @@ export class ReportFactoryService {
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+          // IMPORTANT: Don't throw here.  Log the error and continue.
+          console.error(
+            `HTTP error fetching resources for student ${i}! Status: ${response.status}`
+          );
+          continue; // Skip to the next student
         }
         const data = await response.json();
 
@@ -243,9 +259,11 @@ export class ReportFactoryService {
           }
         } else {
           console.warn(`Failed to get resources for student ${i}:`, data.error);
+          // IMPORTANT:  Don't throw. Log and continue.
         }
       } catch (error) {
         console.error(`Error fetching resources for student ${i}:`, error);
+        // IMPORTANT:  Don't throw. Log and continue.
       }
     }
 

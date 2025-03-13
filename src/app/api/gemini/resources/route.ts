@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
         const result = await model.generateContent(prompt);
         const response = result.response.text();
         const cleanJson = response.replace(/```json\n?|\n?```/g, "").trim();
+        console.log("Raw Gemini Response (cleanJson):", cleanJson);
         return JSON.parse(cleanJson);
       }
     );

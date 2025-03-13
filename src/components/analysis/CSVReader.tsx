@@ -1,23 +1,37 @@
 // components/analysis/CSVReader.tsx
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { parse } from 'papaparse';
-import { useDropzone } from 'react-dropzone';
+import React, { useState, useCallback, useEffect } from "react";
+import { parse, ParseResult } from "papaparse"; // Import ParseResult
+import { useDropzone } from "react-dropzone";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Copy, ExternalLink } from 'lucide-react';
-import { StudentData } from '@/types';
+import { Upload, FileText, Copy, ExternalLink } from "lucide-react";
+import { StudentData } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import ReportGenerationProgress from '@/components/reports/ReportGenerationProgress';
-import { reportFactoryService } from '@/services/reportFactoryService';
-import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import { useProcessTime } from '@/hooks/useProcessTime';
+import ReportGenerationProgress from "@/components/reports/ReportGenerationProgress";
+import { reportFactoryService } from "@/services/reportFactoryService";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { useProcessTime } from "@/hooks/useProcessTime";
+import { z, ZodError } from "zod"; // Import Zod
 
 interface CSVReaderProps {
   onDataLoaded: (data: StudentData[], group: string) => Promise<string>;
 }
+
+// Zod schema for student data validation
+const studentDataSchema = z.object({
+  Nombre: z.string().min(1, "Name is required"),
+  "Apellido(s)": z.string().min(1, "Last name is required"),
+  READING: z.number().min(0).max(100),
+  LISTENING: z.number().min(0).max(100),
+  SPEAKING: z.number().min(0).max(100),
+  WRITING: z.number().min(0).max(100),
+  "FEEDBACK SPEAKING": z.string().optional().default(""),
+  "FEEDBACK WRITING": z.string().optional().default(""),
+});
+
 
 const CSVReader: React.FC<CSVReaderProps> = ({ onDataLoaded }) => {
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -49,28 +63,76 @@ const CSVReader: React.FC<CSVReaderProps> = ({ onDataLoaded }) => {
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
-    if (file && file.type === 'text/csv') {
-      const group = extractGroupFromFilename(file.name);
-      if (!group) {
-        setError('File name must include group number (e.g., toefl_10A.csv)');
-        return;
-      }
-      setCsvFile(file);
-      setError(null);
-      setGeneratedUrl(null);
-
-      // Pre-parsear el CSV para obtener el conteo de estudiantes
-      parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        preview: 1000, // Límite razonable
-        complete: (results) => {
-          setStudentsCount(results.data.length);
-        }
-      });
-    } else {
-      setError('Please upload a valid CSV file');
+    if (!file) {
+      setError("No file selected.");
+      return;
     }
+
+    if (file.type !== "text/csv") {
+      setError("Please upload a valid CSV file.");
+      return;
+    }
+
+    const group = extractGroupFromFilename(file.name);
+    if (!group) {
+      setError("File name must include group number (e.g., toefl_10A.csv)");
+      return;
+    }
+
+    setCsvFile(file);
+    setError(null);
+    setGeneratedUrl(null);
+    setIsProcessing(false); // Reset processing state
+    setProgress(null);
+    // Pre-parsing validation using beforeFirstChunk
+    parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      delimiter: ";",
+      preview: 1, // Read only the first line for header check
+      beforeFirstChunk: (chunk) => {
+        const rows = chunk.split("\n");
+        if (rows.length > 0) {
+          const headers = rows[0].split(";"); // Split by semicolon
+          const requiredColumns = [
+            "Nombre",
+            "Apellido(s)",
+            "READING",
+            "LISTENING",
+            "SPEAKING",
+            "WRITING",
+          ];
+          const missingColumns = requiredColumns.filter(
+            (col) => !headers.includes(col)
+          );
+
+          if (missingColumns.length > 0) {
+            // Immediately stop parsing and set the error
+            setError(`Missing required columns: ${missingColumns.join(", ")}`);
+            return; // Stop parsing
+          }
+        }
+      },
+      complete: () => {
+        // After header check, now we can parse to get the count.  We still
+        // do full validation later.
+        parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          delimiter: ";",
+          preview: 1000, // Limit for count
+          complete: (results) => {
+            setStudentsCount(results.data.length);
+          },
+          error: (err) => {
+            setError(`Error reading file: ${err.message}`);
+          },
+        });
+      },
+      error: (err) => {
+        setError(`Error during pre-parse: ${err.message}`);
+      },
+    });
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -82,73 +144,96 @@ const CSVReader: React.FC<CSVReaderProps> = ({ onDataLoaded }) => {
     disabled: isProcessing,
   });
 
-  const handleParse = async () => {
-    if (!csvFile) {
-      setError('No file selected');
-      return;
-    }
+   const handleParse = async () => {
+     if (!csvFile) {
+       setError("No file selected");
+       return;
+     }
 
-    const group = extractGroupFromFilename(csvFile.name);
-    if (!group) {
-      setError('Could not extract group from filename');
-      return;
-    }
+     const group = extractGroupFromFilename(csvFile.name);
+     if (!group) {
+       setError("Could not extract group from filename");
+       return;
+     }
 
-    setIsProcessing(true);
-    startProcessing(); // Iniciar el contador de tiempo
-    setError(null);
+     setIsProcessing(true);
+     startProcessing();
+     setError(null);
 
-    try {
-      const result = await new Promise<StudentData[]>((resolve, reject) => {
-        parse(csvFile, {
-          header: true,
-          skipEmptyLines: true,
-          delimiter: ';',
-          dynamicTyping: true,
-          complete: (results) => {
-            if (results.errors.length) {
-              reject(new Error(`Error processing file: ${results.errors[0].message}`));
-              return;
-            }
-            resolve(results.data as StudentData[]);
-          },
-          error: (error) => {
-            reject(new Error(`Error reading file: ${error.message}`));
-          }
-        });
-      });
+     try {
+       const result = await new Promise<StudentData[]>((resolve, reject) => {
+         parse(csvFile, {
+           header: true,
+           skipEmptyLines: true,
+           delimiter: ";",
+           dynamicTyping: true,
+           complete: (results: ParseResult<StudentData>) => {
+             // Type the results
+             if (results.errors.length) {
+               reject(
+                 new Error(
+                   `Error processing file: ${results.errors[0].message}`
+                 )
+               );
+               return;
+             }
+             // Zod validation for each row
+             const validatedData: StudentData[] = [];
+             for (const row of results.data) {
+               try {
+                 const validatedRow = studentDataSchema.parse(row);
+                 // If validation succeeds, add to the array
+                 validatedData.push(validatedRow);
+               } catch (error) {
+                 if (error instanceof ZodError) {
+                   // Construct a user-friendly error message
+                   const errorMessages = error.errors
+                     .map((e) => `${e.path.join(".")}: ${e.message}`)
+                     .join("; ");
+                   reject(
+                     new Error(
+                       `Validation error in row ${
+                         results.data.indexOf(row) + 2
+                       }: ${errorMessages}`
+                     )
+                   );
+                   return; // Stop processing if any row is invalid
+                 }
+                 reject(error); //For other kind of errors.
+                 return;
+               }
+             }
+             resolve(validatedData);
+           },
+           error: (error) => {
+             reject(new Error(`Error reading file: ${error.message}`));
+           },
+         });
+       });
 
-      const requiredColumns = ['Nombre', 'Apellido(s)', 'READING', 'LISTENING', 'SPEAKING', 'WRITING'];
-      const missingColumns = requiredColumns.filter(col => 
-        !Object.keys(result[0] as object).includes(col)
-      );
+       const shareUrl = await onDataLoaded(result, group);
+       setGeneratedUrl(shareUrl);
 
-      if (missingColumns.length > 0) {
-        throw new Error(`Missing required columns: ${missingColumns.join(', ')}`);
-      }
+       toast({
+         title: "Success",
+         description: "Report generated successfully!",
+       });
+     } catch (err) {
+       console.error("Error parsing CSV:", err);
+       setError(err instanceof Error ? err.message : "Error processing file");
 
-      const shareUrl = await onDataLoaded(result, group);
-      setGeneratedUrl(shareUrl);
-      
-      toast({
-        title: "Success",
-        description: "Report generated successfully!",
-      });
+       toast({
+         variant: "destructive",
+         title: "Error",
+         description:
+           err instanceof Error ? err.message : "Error processing file",
+       });
+     } finally {
+       setIsProcessing(false);
+       stopProcessing();
+     }
+   };
 
-    } catch (err) {
-      console.error('Error parsing CSV:', err);
-      setError(err instanceof Error ? err.message : 'Error processing file');
-      
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: err instanceof Error ? err.message : 'Error processing file',
-      });
-    } finally {
-      setIsProcessing(false);
-      stopProcessing(); // Detener el contador de tiempo
-    }
-  };
 
   const handleCopyUrl = () => {
     if (generatedUrl) {
