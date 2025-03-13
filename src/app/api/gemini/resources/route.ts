@@ -11,10 +11,13 @@ import { geminiRateLimiter } from "@/services/geminiRateLimiter"; // Import
 import { ResourcesResponse } from "@/hooks/useGeminiResources";
 
 const genAI = new GoogleGenerativeAI(
-  process.env.GENERATIVE_API_KEY_3 as string
+  process.env.GENERATIVE_API_KEY_3 as string // Or a single, configurable key
 );
+// Use the environment variable for the model, with a default
+const geminiModelName = process.env.GEMINI_MODEL_NAME || "gemini-2.0-flash-exp";
+
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash-exp",
+  model: geminiModelName,
   safetySettings: [
     {
       category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
@@ -23,7 +26,7 @@ const model = genAI.getGenerativeModel({
   ],
 });
 
-// In-memory cache
+// In-memory cache - Consider Redis or similar for production
 const resourcesCache = new Map<string, ResourcesResponse>();
 
 export async function POST(request: NextRequest) {
@@ -60,54 +63,50 @@ export async function POST(request: NextRequest) {
             feedback: studentData["FEEDBACK WRITING"],
           },
         };
+
+        // *** IMPROVED PROMPT ***
         const prompt = `
-          As an expert in English language learning and academic preparation, analyze this student's performance and provide detailed, personalized resource recommendations.
+          As a TOEFL preparation expert, analyze this student's performance and provide HIGHLY SPECIFIC, personalized resource recommendations.  Avoid generic suggestions.
 
           Student Profile:
           ${JSON.stringify(skillsData, null, 2)}
 
-          Student Profile includes:
-          - Skill scores (READING, LISTENING, SPEAKING, WRITING)
-          - Overall proficiency level
+          Consider these factors:
+          1.  **Specific Weaknesses:**  Identify the student's *most* significant weaknesses within each skill.  Don't just say "improve listening" - say "improve listening comprehension of academic lectures" or "improve note-taking skills during fast-paced conversations".  Use the feedback provided for Speaking and Writing.
+          2.  **Current Level:** Tailor recommendations to the student's current level (A2, B1, B2, C1, C2).  A B1 student needs different resources than a C1 student.
+          3.  **Resource Variety:**  Recommend a MIX of resource types:  apps, websites, tools, practice exercises, and courses.
+          4.  **Free vs. Premium:** Prioritize FREE, high-quality resources, but include *one* premium option per category if it offers significant value.
+          5.  **2024 Relevance:**  Focus on UP-TO-DATE resources available in 2024.
+          6. **Actionable Descriptions:** Explain *exactly how* each resource addresses the student's needs.
 
-          Consider:
-         1. Analyze the student's current level and weaknesses in each skill.
-          2. Incorporate feedback provided for SPEAKING and WRITING.
-          3. Recommend modern learning tools and platforms available in 2024.
-          4. Prioritize free resources but include a mix of free and premium options.
-          5. Focus on both TOEFL preparation and general academic English development.
-          6. Provide 1–3 resources per category.
           Provide recommendations in this exact JSON format:
           {
             "categories": [
               {
-                "category": "category name",
+                "category": "category name",  //  Be specific: e.g., "Vocabulary Building", "Pronunciation Practice", "Academic Listening"
                 "description": "brief category description",
                 "resources": [
                   {
                     "name": "resource name",
-                    "description": "detailed description, how it helps the student, and why it is recommended",
+                    "description": "DETAILED description of how this resource helps the student address their specific weaknesses, and why it's appropriate for their level.",
                     "url": "optional URL",
-                    "type": "app | website | tool | practice | course",
-                    "focus": ["specific skills or areas targeted by this resource"]
+                    "type": "app | website | tool | practice | course", //  Strictly enforce these types
+                    "focus": ["specific skills or areas targeted"] //  e.g., ["listening comprehension", "note-taking", "academic vocabulary"]
                   }
                 ]
               }
             ]
           }
 
-          Include these diverse categories:
-          - Mobile Learning Apps: Tools for learning on the go, focused on listening, vocabulary, and grammar.
-          - Academic Resources: Websites or platforms for improving academic English skills.
-          - Practice Platforms: Tools for targeted TOEFL or general English practice.
-          - Interactive Tools: Games, simulations, or tools for interactive learning.
-          - Community and Exchange: Platforms for language exchange, discussion forums, or speaking groups.
-          - Assessment and Tracking: Tools for self-assessment and tracking progress.
-
-          Guidelines:
-          - Match recommendations to the student's weaknesses and learning needs.
-          - Focus on actionable and practical resources.
-          - Ensure all resources are relevant and up-to-date as of 2024.
+          Include these categories (but use more specific names):
+          - Mobile Learning Apps (focus on SPECIFIC skills)
+          - Academic Resources (for academic English)
+          - Practice Platforms (for targeted skill practice)
+          - Interactive Tools (games, simulations, etc.)
+          - Community and Exchange (language exchange, forums)
+          - Assessment and Tracking (for self-assessment)
+          
+          Limit to 1-3 resources per category. NO DUPLICATE recommendations.
         `;
 
         const result = await model.generateContent(prompt);
@@ -118,7 +117,7 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    resourcesCache.set(cacheKey, geminiResponse); // Correctly typed
+    resourcesCache.set(cacheKey, geminiResponse);
 
     return NextResponse.json({ success: true, data: geminiResponse });
   } catch (error) {

@@ -1,5 +1,5 @@
 // components/analysis/CSVReader.tsx
-'use client';
+"use client";
 
 import React, { useState, useCallback, useEffect } from "react";
 import { parse, ParseResult } from "papaparse"; // Import ParseResult
@@ -32,7 +32,6 @@ const studentDataSchema = z.object({
   "FEEDBACK WRITING": z.string().optional().default(""),
 });
 
-
 const CSVReader: React.FC<CSVReaderProps> = ({ onDataLoaded }) => {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +40,7 @@ const CSVReader: React.FC<CSVReaderProps> = ({ onDataLoaded }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
   const { toast } = useToast();
-  const router = useRouter();  
+  const router = useRouter();
   const [studentsCount, setStudentsCount] = useState(0);
 
   const { startProcessing, stopProcessing } = useProcessTime(studentsCount);
@@ -138,102 +137,99 @@ const CSVReader: React.FC<CSVReaderProps> = ({ onDataLoaded }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'text/csv': ['.csv'],
+      "text/csv": [".csv"],
     },
     multiple: false,
     disabled: isProcessing,
   });
 
-   const handleParse = async () => {
-     if (!csvFile) {
-       setError("No file selected");
-       return;
-     }
+  const handleParse = async () => {
+    if (!csvFile) {
+      setError("No file selected");
+      return;
+    }
 
-     const group = extractGroupFromFilename(csvFile.name);
-     if (!group) {
-       setError("Could not extract group from filename");
-       return;
-     }
+    const group = extractGroupFromFilename(csvFile.name);
+    if (!group) {
+      setError("Could not extract group from filename");
+      return;
+    }
 
-     setIsProcessing(true);
-     startProcessing();
-     setError(null);
+    setIsProcessing(true);
+    startProcessing();
+    setError(null);
 
-     try {
-       const result = await new Promise<StudentData[]>((resolve, reject) => {
-         parse(csvFile, {
-           header: true,
-           skipEmptyLines: true,
-           delimiter: ";",
-           dynamicTyping: true,
-           complete: (results: ParseResult<StudentData>) => {
-             // Type the results
-             if (results.errors.length) {
-               reject(
-                 new Error(
-                   `Error processing file: ${results.errors[0].message}`
-                 )
-               );
-               return;
-             }
-             // Zod validation for each row
-             const validatedData: StudentData[] = [];
-             for (const row of results.data) {
-               try {
-                 const validatedRow = studentDataSchema.parse(row);
-                 // If validation succeeds, add to the array
-                 validatedData.push(validatedRow);
-               } catch (error) {
-                 if (error instanceof ZodError) {
-                   // Construct a user-friendly error message
-                   const errorMessages = error.errors
-                     .map((e) => `${e.path.join(".")}: ${e.message}`)
-                     .join("; ");
-                   reject(
-                     new Error(
-                       `Validation error in row ${
-                         results.data.indexOf(row) + 2
-                       }: ${errorMessages}`
-                     )
-                   );
-                   return; // Stop processing if any row is invalid
-                 }
-                 reject(error); //For other kind of errors.
-                 return;
-               }
-             }
-             resolve(validatedData);
-           },
-           error: (error) => {
-             reject(new Error(`Error reading file: ${error.message}`));
-           },
-         });
-       });
+    try {
+      const result = await new Promise<StudentData[]>((resolve, reject) => {
+        parse(csvFile, {
+          header: true,
+          skipEmptyLines: true,
+          delimiter: ";",
+          dynamicTyping: true,
+          complete: (results: ParseResult<StudentData>) => {
+            // Type the results
+            if (results.errors.length) {
+              reject(
+                new Error(`Error processing file: ${results.errors[0].message}`)
+              );
+              return;
+            }
+            // Zod validation for each row
+            const validatedData: StudentData[] = [];
+            for (const row of results.data) {
+              try {
+                const validatedRow = studentDataSchema.parse(row);
+                // If validation succeeds, add to the array
+                validatedData.push(validatedRow);
+              } catch (error) {
+                if (error instanceof ZodError) {
+                  // Construct a user-friendly error message
+                  const errorMessages = error.errors
+                    .map((e) => `${e.path.join(".")}: ${e.message}`)
+                    .join("; ");
+                  reject(
+                    new Error(
+                      `Validation error in row ${
+                        results.data.indexOf(row) + 2
+                      }: ${errorMessages}`
+                    )
+                  );
+                  return; // Stop processing if any row is invalid
+                }
+                reject(error); //For other kind of errors.
+                return;
+              }
+            }
+            resolve(validatedData);
+          },
+          error: (error) => {
+            reject(new Error(`Error reading file: ${error.message}`));
+          },
+        });
+      });
 
-       const shareUrl = await onDataLoaded(result, group);
-       setGeneratedUrl(shareUrl);
+      const shareUrl = await onDataLoaded(result, group);
+      setGeneratedUrl(shareUrl);
 
-       toast({
-         title: "Success",
-         description: "Report generated successfully!",
-       });
-     } catch (err) {
-       console.error("Error parsing CSV:", err);
-       setError(err instanceof Error ? err.message : "Error processing file");
+      toast({
+        title: "Success",
+        description: "Report generated successfully!",
+      });
+    } catch (err) {
+      console.error("Error parsing CSV:", err);
+      setError(err instanceof Error ? err.message : "Error processing file");
 
-       toast({
-         variant: "destructive",
-         title: "Error",
-         description:
-           err instanceof Error ? err.message : "Error processing file",
-       });
-     } finally {
-       setIsProcessing(false);
-       stopProcessing();
-     }
-   };
-
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Error processing file",
+      });
+    } finally {
+      setIsProcessing(false);
+      stopProcessing();
+    }
+  };
 
   const handleCopyUrl = () => {
     if (generatedUrl) {
@@ -259,7 +255,6 @@ const CSVReader: React.FC<CSVReaderProps> = ({ onDataLoaded }) => {
     setGeneratedUrl(null);
   };
 
-
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardContent className="pt-6">
@@ -268,22 +263,24 @@ const CSVReader: React.FC<CSVReaderProps> = ({ onDataLoaded }) => {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        
+
         {progress && !generatedUrl ? (
           <ReportGenerationProgress progress={progress} />
         ) : (
           <div
             {...getRootProps()}
             className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-              isDragActive ? 'border-primary bg-primary/10' : 'border-gray-300 hover:border-primary'
-            } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              isDragActive
+                ? "border-primary bg-primary/10"
+                : "border-gray-300 hover:border-primary"
+            } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <input {...getInputProps()} disabled={isProcessing} />
             <Upload className="mx-auto h-12 w-12 text-gray-400" />
             <p className="mt-2 text-sm text-gray-600">
               {isDragActive
-                ? 'Drop the CSV file here'
-                : 'Drag and drop a CSV file here, or click to select'}
+                ? "Drop the CSV file here"
+                : "Drag and drop a CSV file here, or click to select"}
             </p>
           </div>
         )}
@@ -310,21 +307,16 @@ const CSVReader: React.FC<CSVReaderProps> = ({ onDataLoaded }) => {
           <div className="mt-4 space-y-4">
             <Alert>
               <AlertDescription>
-                Report generated successfully! You can now view it or copy the URL.
+                Report generated successfully! You can now view it or copy the
+                URL.
               </AlertDescription>
             </Alert>
             <div className="flex gap-2">
-              <Button
-                onClick={handleViewReport}
-                className="flex-1"
-              >
+              <Button onClick={handleViewReport} className="flex-1">
                 <ExternalLink className="mr-2 h-4 w-4" />
                 View Report
               </Button>
-              <Button
-                onClick={handleCopyUrl}
-                variant="outline"
-              >
+              <Button onClick={handleCopyUrl} variant="outline">
                 <Copy className="mr-2 h-4 w-4" />
                 Copy URL
               </Button>

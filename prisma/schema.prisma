@@ -15,9 +15,10 @@ model Report {
   group            String
   shareToken       String    @unique
   students         Student[]
-  recommendations  Json    // JSON stored as TEXT
-  distribution     Json    // JSON stored as TEXT
-  
+  recommendations  Json      @db.JsonB // Use JsonB
+  distribution     Json      @db.JsonB // Use JsonB
+  analysis         Json?     @db.JsonB // Use JsonB, and make optional
+
 }
 
 model Student {
@@ -33,7 +34,7 @@ model Student {
   speakingFeedback String?
   writingFeedback  String?
   shareToken       String   @unique
-  recommendations  Json    // JSON stored as TEXT
+  recommendations  Json     @db.JsonB // Use JsonB
 }
 
 // For managing access to shared reports
