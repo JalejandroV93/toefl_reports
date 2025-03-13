@@ -3,9 +3,11 @@ import { ChartData } from '@/types';
 import { BookOpenCheck, Headphones, MessageSquare, BookOpen } from "lucide-react";
 import { useGeminiSkillAnalysis } from '@/hooks/useGeminiSkillAnalysis';
 import { Skeleton } from "@/components/ui/skeleton";
+import { SkillsAnalysis } from "@/hooks/useGeminiSkillAnalysis";
 
 interface DetailedAnalysisSectionProps {
   distributionData: ChartData[];
+  analysis?: SkillsAnalysis;
 }
 
 const SkillSkeleton = () => (

@@ -1,106 +1,73 @@
-// hooks/useGeminiSkillAnalysis.tsx
-'use client';
-import { useState, useEffect } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { ChartData } from '@/types';
+"use client";
+import { useState, useEffect, useMemo } from "react"; // Import useMemo
+import { ChartData } from "@/types";
 
 interface SkillAnalysis {
   strengths: string[];
   improvements: string[];
 }
 
-interface SkillsAnalysis {
+export interface SkillsAnalysis {
   [key: string]: SkillAnalysis;
 }
 
-export const useGeminiSkillAnalysis = (distributionData: ChartData[]) => {
-  const [analysis, setAnalysis] = useState<SkillsAnalysis>({});
-  const [isLoading, setIsLoading] = useState(true);
+// Add optional initialAnalysis parameter
+export const useGeminiSkillAnalysis = (
+  distributionData: ChartData[],
+  initialAnalysis?: SkillsAnalysis // Add this
+) => {
+  const [analysis, setAnalysis] = useState<SkillsAnalysis>(
+    initialAnalysis || {}
+  ); // Initialize with initial data
+  const [isLoading, setIsLoading] = useState(!initialAnalysis); // Only load if no initial data
   const [error, setError] = useState<string | null>(null);
 
+  // Use useMemo
+  const memoizedDistributionData = useMemo(
+    () => distributionData,
+    [distributionData]
+  );
+
   useEffect(() => {
-    const fetchAnalysis = async () => {
-      const dataString = JSON.stringify(distributionData);
-      const cachedKey = `gemini-skill-analysis-${dataString}`;
-      const cached = localStorage.getItem(cachedKey);
+    // Only fetch if no initial analysis was provided
+    if (!initialAnalysis) {
+      const fetchAnalysis = async () => {
+        setIsLoading(true);
+        setError(null);
 
-      if (cached) {
-        setAnalysis(JSON.parse(cached));
-        setIsLoading(false);
-        return;
-      }
+        try {
+          const response = await fetch("/api/gemini/skill-analysis", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              distributionData: memoizedDistributionData,
+            }), // Use memoized data
+          });
 
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-        if (!API_KEY) {
-          throw new Error('Gemini API key not found');
-        }
-
-        const genAI = new GoogleGenerativeAI(API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-
-        const prompt = `
-          Analyze this TOEFL skills distribution data and provide specific insights for each skill:
-          ${dataString}
-
-          For each skill, analyze:
-          - Level distribution patterns
-          - Areas where students excel
-          - Common challenges and gaps
-          - Notable trends or patterns
-          - Impact on overall learning outcomes
-
-          Generate a JSON response with exactly this structure:
-          {
-            "Reading": {
-              "strengths": [
-                "3-4 specific strengths based on the data",
-                "focus on concrete observations",
-                "highlight positive patterns"
-              ],
-              "improvements": [
-                "3-4 specific areas needing improvement",
-                "based on identified gaps",
-                "actionable insights"
-              ]
-            },
-            "Listening": {same structure},
-            "Speaking": {same structure},
-            "Writing": {same structure}
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
           }
 
-          Requirements:
-          - Base all analysis on the actual data patterns
-          - Be specific and detailed in observations
-          - Focus on institutional-level patterns
-          - Identify systemic strengths and weaknesses
-          - Consider the distribution across all levels
-        `;
+          const data = await response.json();
+          if (data.success) {
+            setAnalysis(data.data);
+          } else {
+            throw new Error(data.error || "Failed to fetch skill analysis");
+          }
+        } catch (err) {
+          console.error("Error fetching skill analysis:", err);
+          setError(
+            err instanceof Error ? err.message : "Error generating analysis"
+          );
+          setAnalysis(getDefaultAnalysis());
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-        const cleanText = text.replace(/```json\n?|```/g, '').trim();
-        const parsed = JSON.parse(cleanText) as SkillsAnalysis;
-
-        localStorage.setItem(cachedKey, JSON.stringify(parsed));
-        setAnalysis(parsed);
-      } catch (err) {
-        console.error('Error fetching skill analysis:', err);
-        setError(err instanceof Error ? err.message : 'Error generating analysis');
-        
-        // Set default analysis in case of error
-        setAnalysis(getDefaultAnalysis());
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAnalysis();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(distributionData)]);
+      fetchAnalysis();
+    }
+  }, [memoizedDistributionData, initialAnalysis]); // Add initialAnalysis to dependency array
 
   return { analysis, isLoading, error };
 };
@@ -108,22 +75,22 @@ export const useGeminiSkillAnalysis = (distributionData: ChartData[]) => {
 const getDefaultAnalysis = (): SkillsAnalysis => {
   const defaultSkillAnalysis: SkillAnalysis = {
     strengths: [
-      'Students show consistent participation',
-      'Basic understanding established',
-      'Foundation for improvement present'
+      "Students show consistent participation",
+      "Basic understanding established",
+      "Foundation for improvement present",
     ],
     improvements: [
-      'Need for more structured practice',
-      'Focus on advanced skill development',
-      'Strengthen core competencies'
-    ]
+      "Need for more structured practice",
+      "Focus on advanced skill development",
+      "Strengthen core competencies",
+    ],
   };
 
   return {
     Reading: { ...defaultSkillAnalysis },
     Listening: { ...defaultSkillAnalysis },
     Speaking: { ...defaultSkillAnalysis },
-    Writing: { ...defaultSkillAnalysis }
+    Writing: { ...defaultSkillAnalysis },
   };
 };
 
