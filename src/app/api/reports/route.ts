@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       data: {
         group,
         shareToken: nanoid(10),
-        generalRecommendations: JSON.stringify(recommendations || {}),
+        recommendations: JSON.stringify(recommendations || {}),
         distribution: JSON.stringify(distribution || []),
         students: {
           create: studentsData.map(student => ({
