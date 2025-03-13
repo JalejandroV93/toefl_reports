@@ -9,7 +9,9 @@ import { StudentData } from "@/types";
 import { getLevelForScore } from "@/utils/scoreConversion";
 import { geminiRateLimiter } from "@/services/geminiRateLimiter"; // Import
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
+const genAI = new GoogleGenerativeAI(
+  process.env.GENERATIVE_API_KEY_2 as string
+);
 const model = genAI.getGenerativeModel({
   model: "gemini-2.0-flash-exp",
   safetySettings: [
